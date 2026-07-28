@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	  xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>schwarzes_brett</id>
+	<name>Schwarzes Brett</name>
+	<summary>A shared notice board for your Nextcloud</summary>
+	<description><![CDATA[
+A shared notice board where people can publish notes with categories, dates,
+locations, images, and links. The five newest notes are also available as a
+Nextcloud Dashboard widget.
+	]]></description>
+	<version>1.0.0</version>
+	<licence>agpl</licence>
+	<author mail="">Schwarzes Brett contributors</author>
+	<namespace>SchwarzesBrett</namespace>
+	<category>organization</category>
+	<dependencies>
+		<php min-version="8.2"/>
+		<nextcloud min-version="32" max-version="34"/>
+	</dependencies>
+	<navigations>
+		<navigation>
+			<name>Schwarzes Brett</name>
+			<route>schwarzes_brett.page.index</route>
+			<order>40</order>
+		</navigation>
+	</navigations>
+</info>
