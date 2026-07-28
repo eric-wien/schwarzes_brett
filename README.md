@@ -27,6 +27,9 @@ data and are only served through an authenticated app route.
 There are no runtime Composer packages and no frontend build dependencies.
 The committed JavaScript and CSS files are the assets served by Nextcloud.
 
+The 1.0.0 release has been integration-tested with the official Apache images
+for Nextcloud 33.0.7 (PHP 8.4) and Nextcloud 34.0.2 (PHP 8.5), using SQLite.
+
 ## Install from a checkout
 
 Clone or copy this directory to:
