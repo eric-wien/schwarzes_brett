@@ -1,0 +1,284 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Schwarzes Brett contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * Styles for the Dashboard widget. Everything is expressed with Nextcloud
+ * design tokens so the widget follows the active theme, and the two values
+ * without a token (the item surface and its hover state) are resolved per
+ * theme the same way css/main.css does it.
+ */
+
+/*
+ * The widget title icon, same artwork as the app menu entry. It has to start
+ * from the black variant: the panel header is a normal surface, and
+ * --background-invert-if-dark flips it to white only in the dark themes.
+ * img/app.svg is the white variant, which the app menu needs for the header.
+ */
+.icon-schwarzes-brett {
+	/* Keep the fallback class in sync with BoardWidget::getIconUrl(). */
+	background-image: url('../img/app-dark.svg?v=2');
+	background-repeat: no-repeat;
+	background-position: center;
+	filter: var(--background-invert-if-dark);
+}
+
+.sbw {
+	--sbw-surface: var(--color-main-background);
+	--sbw-surface-hover: var(--color-background-hover);
+	--sbw-lines: 3;
+
+	--sbw-accent-1: #3b82c4;
+	--sbw-accent-2: #12a08a;
+	--sbw-accent-3: #6d9f28;
+	--sbw-accent-4: #cf8a11;
+	--sbw-accent-5: #d4576b;
+	--sbw-accent-6: #8a6ae0;
+
+	display: flex;
+	/*
+	 * .panel--content is a fixed 424px with `overflow: visible`, so a taller
+	 * widget would spill over the dashboard's own footer. Cap at the panel
+	 * height and let the list scroll; when the panel height is auto the cap
+	 * simply does not apply and the content flows as usual.
+	 */
+	max-block-size: 100%;
+	flex-direction: column;
+	gap: 8px;
+}
+
+body[data-theme-dark] .sbw,
+body[data-theme-dark-highcontrast] .sbw {
+	--sbw-surface: var(--color-background-hover);
+	--sbw-surface-hover: var(--color-background-dark);
+
+	--sbw-accent-1: #5aa0e0;
+	--sbw-accent-2: #35c0a6;
+	--sbw-accent-3: #91c04a;
+	--sbw-accent-4: #e0a63a;
+	--sbw-accent-5: #ea7d8d;
+	--sbw-accent-6: #a68cf0;
+}
+
+@media (prefers-color-scheme: dark) {
+	body[data-theme-default] .sbw {
+		--sbw-surface: var(--color-background-hover);
+		--sbw-surface-hover: var(--color-background-dark);
+
+		--sbw-accent-1: #5aa0e0;
+		--sbw-accent-2: #35c0a6;
+		--sbw-accent-3: #91c04a;
+		--sbw-accent-4: #e0a63a;
+		--sbw-accent-5: #ea7d8d;
+		--sbw-accent-6: #a68cf0;
+	}
+
+	body[data-theme-light] .sbw,
+	body[data-theme-light-highcontrast] .sbw {
+		--sbw-surface: var(--color-main-background);
+		--sbw-surface-hover: var(--color-background-hover);
+
+		--sbw-accent-1: #3b82c4;
+		--sbw-accent-2: #12a08a;
+		--sbw-accent-3: #6d9f28;
+		--sbw-accent-4: #cf8a11;
+		--sbw-accent-5: #d4576b;
+		--sbw-accent-6: #8a6ae0;
+	}
+}
+
+.sbw *,
+.sbw *::before,
+.sbw *::after {
+	box-sizing: border-box;
+}
+
+.sbw-list {
+	display: flex;
+	min-block-size: 0;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 4px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+}
+
+.sbw-item {
+	display: flex;
+	min-inline-size: 0;
+	flex: 0 0 auto;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 8px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-element, 8px);
+	background-color: var(--sbw-surface);
+	color: var(--color-main-text);
+	cursor: pointer;
+	transition: background-color var(--animation-quick, 100ms) ease-in-out,
+		border-color var(--animation-quick, 100ms) ease-in-out;
+}
+
+.sbw-item:hover,
+.sbw-item:focus-within {
+	border-color: var(--color-border-maxcontrast);
+	background-color: var(--sbw-surface-hover);
+}
+
+.sbw-item a {
+	text-decoration: none;
+}
+
+/* Same category-derived accent the board uses, so both views colour-code alike. */
+.sbw-item[data-accent='0'] { --sbw-accent: var(--color-text-maxcontrast); }
+.sbw-item[data-accent='1'] { --sbw-accent: var(--sbw-accent-1); }
+.sbw-item[data-accent='2'] { --sbw-accent: var(--sbw-accent-2); }
+.sbw-item[data-accent='3'] { --sbw-accent: var(--sbw-accent-3); }
+.sbw-item[data-accent='4'] { --sbw-accent: var(--sbw-accent-4); }
+.sbw-item[data-accent='5'] { --sbw-accent: var(--sbw-accent-5); }
+.sbw-item[data-accent='6'] { --sbw-accent: var(--sbw-accent-6); }
+
+.sbw-item__thumb {
+	display: grid;
+	inline-size: 36px;
+	block-size: 36px;
+	flex: 0 0 36px;
+	place-items: center;
+	overflow: hidden;
+	border-radius: var(--border-radius-small, 4px);
+	background-color: color-mix(in srgb, var(--sbw-accent, var(--color-primary-element)) 16%, transparent);
+	color: var(--sbw-accent, var(--color-primary-element));
+}
+
+.sbw-item__thumb--image {
+	background-color: var(--color-background-dark);
+}
+
+.sbw-item__logo {
+	inline-size: 22px;
+	block-size: 22px;
+	fill: currentColor;
+}
+
+.sbw-item__image {
+	inline-size: 100%;
+	block-size: 100%;
+	object-fit: cover;
+}
+
+.sbw-item__body {
+	display: flex;
+	min-inline-size: 0;
+	flex: 1;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.sbw-item__title {
+	color: var(--color-main-text);
+	font-weight: 600;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+.sbw-item:hover .sbw-item__title {
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 2px;
+}
+
+/* The three clamped description lines the widget is meant to show. */
+.sbw-item__text {
+	display: -webkit-box;
+	overflow: hidden;
+	color: var(--color-text-maxcontrast);
+	font-size: var(--font-size-small, 13px);
+	line-height: 1.4;
+	overflow-wrap: anywhere;
+	white-space: pre-line;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: var(--sbw-lines);
+	line-clamp: var(--sbw-lines);
+}
+
+.sbw-item__link {
+	display: flex;
+	inline-size: fit-content;
+	max-inline-size: 100%;
+	min-inline-size: 0;
+	align-items: center;
+	gap: 4px;
+	color: var(--color-primary-element);
+	font-size: var(--font-size-small, 13px);
+	font-weight: 600;
+}
+
+.sbw-item__link:hover > span,
+.sbw-item__link:focus-visible > span {
+	text-decoration: underline;
+}
+
+.sbw-item__link > span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sbw-item__link-icon {
+	inline-size: 14px;
+	block-size: 14px;
+	flex: 0 0 14px;
+	fill: currentColor;
+}
+
+.sbw-item__meta {
+	color: var(--color-text-maxcontrast);
+	font-size: 12px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sbw-more {
+	align-self: flex-start;
+	flex: 0 0 auto;
+	margin-block-start: 2px;
+	padding: 4px 2px;
+	color: var(--color-text-maxcontrast);
+	font-size: var(--font-size-small, 13px);
+	font-weight: 600;
+}
+
+.sbw-more:hover,
+.sbw-more:focus-visible {
+	color: var(--color-main-text);
+}
+
+.sbw-empty {
+	display: grid;
+	place-items: center;
+	align-content: center;
+	gap: 10px;
+	padding: 28px 12px;
+	text-align: center;
+}
+
+.sbw-empty__logo {
+	inline-size: 40px;
+	block-size: 40px;
+	fill: var(--color-text-maxcontrast);
+	opacity: .7;
+}
+
+.sbw-empty__title,
+.sbw-error {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+	font-size: var(--font-size-small, 13px);
+	line-height: 1.4;
+}
+
+.sbw-error {
+	padding: 20px 12px;
+	text-align: center;
+}

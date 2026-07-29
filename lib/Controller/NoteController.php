@@ -11,6 +11,7 @@ namespace OCA\SchwarzesBrett\Controller;
 
 use OCA\SchwarzesBrett\Db\Note;
 use OCA\SchwarzesBrett\Service\ImageService;
+use OCA\SchwarzesBrett\Service\ModerationService;
 use OCA\SchwarzesBrett\Service\NoteNotFoundException;
 use OCA\SchwarzesBrett\Service\NoteService;
 use OCA\SchwarzesBrett\Service\PermissionException;
@@ -32,16 +33,37 @@ final class NoteController extends Controller {
 		private readonly IGroupManager $groupManager,
 		private readonly IUserManager $userManager,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly ModerationService $moderationService,
 		private readonly string $userId,
 	) {
 		parent::__construct($appName, $request);
 	}
 
 	#[NoAdminRequired]
-	public function index(): JSONResponse {
+	public function approve(int $id): JSONResponse {
+		try {
+			$note = $this->noteService->approve($id, $this->userId);
+
+			return new JSONResponse(['note' => $this->serialize($note)]);
+		} catch (ValidationException $exception) {
+			return $this->error($exception->getMessage(), 422, $exception->getField());
+		} catch (NoteNotFoundException $exception) {
+			return $this->error($exception->getMessage(), 404);
+		} catch (PermissionException $exception) {
+			return $this->error($exception->getMessage(), 403);
+		}
+	}
+
+	/**
+	 * @param int|null $limit Return only the newest notes; omit for the full board.
+	 */
+	#[NoAdminRequired]
+	public function index(?int $limit = null): JSONResponse {
 		$notes = array_map(
 			fn (Note $note): array => $this->serialize($note),
-			$this->noteService->findAll(),
+			$limit !== null && $limit > 0
+				? $this->noteService->findLatest(min($limit, 100))
+				: $this->noteService->findAll($this->userId),
 		);
 
 		return new JSONResponse(['notes' => $notes]);
@@ -61,6 +83,7 @@ final class NoteController extends Controller {
 		string $location = '',
 		string $linkUrl = '',
 		string $linkLabel = '',
+		bool $isDraft = false,
 	): JSONResponse {
 		try {
 			$note = $this->noteService->create(
@@ -74,6 +97,7 @@ final class NoteController extends Controller {
 				$location,
 				$linkUrl,
 				$linkLabel,
+				$isDraft,
 			);
 
 			return new JSONResponse(['note' => $this->serialize($note)], 201);
@@ -97,6 +121,7 @@ final class NoteController extends Controller {
 		string $location = '',
 		string $linkUrl = '',
 		string $linkLabel = '',
+		bool $isDraft = false,
 	): JSONResponse {
 		try {
 			$note = $this->noteService->update(
@@ -112,6 +137,7 @@ final class NoteController extends Controller {
 				$location,
 				$linkUrl,
 				$linkLabel,
+				$isDraft,
 			);
 
 			return new JSONResponse(['note' => $this->serialize($note)]);
@@ -146,6 +172,9 @@ final class NoteController extends Controller {
 		$author = $this->userManager->get($note->getUserId());
 		$data['authorName'] = $author?->getDisplayName() ?? $note->getUserId();
 		$data['canEdit'] = $note->getUserId() === $this->userId || $this->isAdmin();
+		$data['canApprove'] = !$note->getIsDraft()
+			&& !$note->getIsApproved()
+			&& $this->moderationService->canModerate($this->userId);
 		$data['imageUrl'] = $note->getImageName() !== null
 			? $this->urlGenerator->linkToRoute(
 				'schwarzes_brett.image.show',

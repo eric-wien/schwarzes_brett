@@ -27,6 +27,10 @@ use OCP\AppFramework\Db\Entity;
  * @method void setEventEnd(?int $eventEnd)
  * @method bool getIsAllDay()
  * @method void setIsAllDay(bool $isAllDay)
+ * @method bool getIsDraft()
+ * @method void setIsDraft(bool $isDraft)
+ * @method bool getIsApproved()
+ * @method void setIsApproved(bool $isApproved)
  * @method string|null getLocation()
  * @method void setLocation(?string $location)
  * @method string|null getLinkUrl()
@@ -50,6 +54,8 @@ final class Note extends Entity implements JsonSerializable {
 	protected ?int $eventStart = null;
 	protected ?int $eventEnd = null;
 	protected bool $isAllDay = false;
+	protected bool $isDraft = false;
+	protected bool $isApproved = true;
 	protected ?string $location = null;
 	protected ?string $linkUrl = null;
 	protected ?string $linkLabel = null;
@@ -63,6 +69,8 @@ final class Note extends Entity implements JsonSerializable {
 		$this->addType('eventStart', 'integer');
 		$this->addType('eventEnd', 'integer');
 		$this->addType('isAllDay', 'boolean');
+		$this->addType('isDraft', 'boolean');
+		$this->addType('isApproved', 'boolean');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
 	}
@@ -85,6 +93,8 @@ final class Note extends Entity implements JsonSerializable {
 			'eventStart' => $this->eventStart,
 			'eventEnd' => $this->eventEnd,
 			'isAllDay' => $this->isAllDay,
+			'isDraft' => $this->isDraft,
+			'isApproved' => $this->isApproved,
 			'location' => $this->location ?? '',
 			'linkUrl' => $this->linkUrl ?? '',
 			'linkLabel' => $this->linkLabel ?? '',

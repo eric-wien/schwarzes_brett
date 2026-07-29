@@ -17,6 +17,7 @@ use OCA\SchwarzesBrett\Service\PermissionException;
 use OCA\SchwarzesBrett\Service\ValidationException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
@@ -85,10 +86,18 @@ final class ImageController extends Controller {
 		}
 	}
 
+	/**
+	 * Browsers load this through an <img> tag, which carries no request token,
+	 * so the CSRF check has to be waived. The route stays read-only and still
+	 * requires an authenticated session.
+	 */
 	#[NoAdminRequired]
+	#[NoCSRFRequired]
 	public function show(int $id): DataDisplayResponse|JSONResponse {
 		try {
-			$image = $this->imageService->read($this->noteService->find($id));
+			$note = $this->noteService->find($id);
+			$this->noteService->assertCanRead($note, $this->userId);
+			$image = $this->imageService->read($note);
 
 			return new DataDisplayResponse($image['content'], 200, [
 				'Content-Type' => $image['mime'],

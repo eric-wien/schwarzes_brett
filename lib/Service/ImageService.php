@@ -13,6 +13,7 @@ use OCA\SchwarzesBrett\Db\Note;
 use OCP\Files\IAppData;
 use OCP\Files\NotFoundException;
 use OCP\Files\SimpleFS\ISimpleFolder;
+use OCP\IL10N;
 
 final class ImageService {
 	public const MAX_SIZE = 5_242_880;
@@ -26,6 +27,7 @@ final class ImageService {
 
 	public function __construct(
 		private readonly IAppData $appData,
+		private readonly IL10N $l10n,
 	) {
 	}
 
@@ -35,29 +37,29 @@ final class ImageService {
 	 */
 	public function store(?array $upload): array {
 		if ($upload === null || (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-			throw new ValidationException('Choose an image to upload.', 'image');
+			throw new ValidationException($this->l10n->t('Choose an image to upload.'), 'image');
 		}
 		if ((int)($upload['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-			throw new ValidationException('The image upload did not complete.', 'image');
+			throw new ValidationException($this->l10n->t('The image upload did not complete.'), 'image');
 		}
 
 		$tmpName = $upload['tmp_name'] ?? null;
 		$size = (int)($upload['size'] ?? 0);
 		if (!is_string($tmpName) || $tmpName === '' || $size <= 0) {
-			throw new ValidationException('The uploaded image is empty.', 'image');
+			throw new ValidationException($this->l10n->t('The uploaded image is empty.'), 'image');
 		}
 		if ($size > self::MAX_SIZE) {
-			throw new ValidationException('Images must be smaller than 5 MB.', 'image');
+			throw new ValidationException($this->l10n->t('Images must be smaller than 5 MB.'), 'image');
 		}
 
 		$mime = (new \finfo(FILEINFO_MIME_TYPE))->file($tmpName);
 		if (!is_string($mime) || !in_array($mime, self::ALLOWED_MIME_TYPES, true)) {
-			throw new ValidationException('Use a JPEG, PNG, GIF, or WebP image.', 'image');
+			throw new ValidationException($this->l10n->t('Use a JPEG, PNG, GIF, or WebP image.'), 'image');
 		}
 
 		$content = file_get_contents($tmpName);
 		if ($content === false || strlen($content) !== $size) {
-			throw new ValidationException('The uploaded image could not be read.', 'image');
+			throw new ValidationException($this->l10n->t('The uploaded image could not be read.'), 'image');
 		}
 
 		$name = bin2hex(random_bytes(20));
@@ -74,13 +76,13 @@ final class ImageService {
 		$name = $note->getImageName();
 		$mime = $note->getImageMime();
 		if ($name === null || $mime === null) {
-			throw new NoteNotFoundException('This note has no image.');
+			throw new NoteNotFoundException($this->l10n->t('This note has no image.'));
 		}
 
 		try {
 			$file = $this->getFolder()->getFile($name);
 		} catch (NotFoundException) {
-			throw new NoteNotFoundException('The image could not be found.');
+			throw new NoteNotFoundException($this->l10n->t('The image could not be found.'));
 		}
 
 		return ['content' => $file->getContent(), 'mime' => $mime];

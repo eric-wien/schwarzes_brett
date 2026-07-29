@@ -13,34 +13,41 @@ use OCA\SchwarzesBrett\Db\Note;
 use OCA\SchwarzesBrett\Db\NoteMapper;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
+use OCP\IL10N;
 
 final class NoteService {
 	private const MAX_CATEGORIES = 12;
 
 	public function __construct(
 		private readonly NoteMapper $mapper,
+		private readonly IL10N $l10n,
+		private readonly ModerationService $moderationService,
 	) {
 	}
 
 	/**
 	 * @return list<Note>
 	 */
-	public function findAll(): array {
-		return $this->mapper->findAll();
+	public function findAll(string $userId): array {
+		return $this->mapper->findAll(
+			$userId,
+			$this->moderationService->isAdmin($userId),
+			$this->moderationService->isModerator($userId),
+		);
 	}
 
 	/**
 	 * @return list<Note>
 	 */
 	public function findLatest(int $limit = 5, ?int $beforeCreatedAt = null): array {
-		return $this->mapper->findLatest(max(1, min($limit, 5)), $beforeCreatedAt);
+		return $this->mapper->findLatest(max(1, min($limit, 100)), $beforeCreatedAt);
 	}
 
 	public function find(int $id): Note {
 		try {
 			return $this->mapper->find($id);
 		} catch (DoesNotExistException|MultipleObjectsReturnedException) {
-			throw new NoteNotFoundException('The note could not be found.');
+			throw new NoteNotFoundException($this->l10n->t('The note could not be found.'));
 		}
 	}
 
@@ -58,6 +65,7 @@ final class NoteService {
 		string $location = '',
 		string $linkUrl = '',
 		string $linkLabel = '',
+		bool $isDraft = false,
 	): Note {
 		$values = $this->validate(
 			$title,
@@ -69,12 +77,14 @@ final class NoteService {
 			$location,
 			$linkUrl,
 			$linkLabel,
+			$isDraft,
 		);
 
 		$now = time();
 		$note = new Note();
 		$note->setUserId($userId);
 		$this->applyValues($note, $values);
+		$note->setIsApproved($isDraft || !$this->moderationService->isEnabled());
 		$note->setCreatedAt($now);
 		$note->setUpdatedAt($now);
 
@@ -97,6 +107,7 @@ final class NoteService {
 		string $location = '',
 		string $linkUrl = '',
 		string $linkLabel = '',
+		bool $isDraft = false,
 	): Note {
 		$note = $this->find($id);
 		$this->assertCanManage($note, $userId, $isAdmin);
@@ -110,10 +121,18 @@ final class NoteService {
 			$location,
 			$linkUrl,
 			$linkLabel,
+			$isDraft,
 		);
 
 		$this->applyValues($note, $values);
-		$note->setUpdatedAt(time());
+		// Publishing new or changed content goes back through moderation. Drafts
+		// remain outside that workflow until their author submits them.
+		$note->setIsApproved($isDraft || !$this->moderationService->isEnabled());
+		// An edit re-posts the note: it returns to the top of the board and the
+		// date it shows is the date of that edit, so both stamps move together.
+		$now = time();
+		$note->setCreatedAt($now);
+		$note->setUpdatedAt($now);
 
 		return $this->mapper->update($note);
 	}
@@ -124,6 +143,32 @@ final class NoteService {
 		$this->mapper->delete($note);
 
 		return $note;
+	}
+
+	public function approve(int $id, string $userId): Note {
+		$note = $this->find($id);
+		$this->assertCanRead($note, $userId);
+		if (!$this->moderationService->canModerate($userId)) {
+			throw new PermissionException($this->l10n->t('Only a moderator or administrator can approve notes.'));
+		}
+		if ($note->getIsDraft()) {
+			throw new ValidationException($this->l10n->t('Drafts cannot be approved.'));
+		}
+
+		if (!$note->getIsApproved()) {
+			$note->setIsApproved(true);
+			// Approval is the moment the note reaches the board.
+			$now = time();
+			$note->setCreatedAt($now);
+			$note->setUpdatedAt($now);
+			$note = $this->mapper->update($note);
+		}
+
+		return $note;
+	}
+
+	public function approveAllPending(): void {
+		$this->mapper->approveAllPending();
 	}
 
 	public function saveImageMetadata(
@@ -146,9 +191,29 @@ final class NoteService {
 		return $this->mapper->update($note);
 	}
 
+	/**
+	 * Administrators can read everything. Drafts are otherwise private to their
+	 * author, while submissions awaiting approval are also visible to moderators.
+	 * Answering "not found" keeps private content undiscoverable.
+	 */
+	public function assertCanRead(Note $note, string $userId): void {
+		if ($this->moderationService->isAdmin($userId) || $note->getUserId() === $userId) {
+			return;
+		}
+		if (!$note->getIsDraft()
+			&& ($note->getIsApproved() || $this->moderationService->isModerator($userId))) {
+			return;
+		}
+		throw new NoteNotFoundException($this->l10n->t('The note could not be found.'));
+	}
+
 	public function assertCanManage(Note $note, string $userId, bool $isAdmin): void {
-		if ($note->getUserId() !== $userId && !$isAdmin) {
-			throw new PermissionException('Only the author or an administrator can change this note.');
+		if ($isAdmin) {
+			return;
+		}
+		$this->assertCanRead($note, $userId);
+		if ($note->getUserId() !== $userId) {
+			throw new PermissionException($this->l10n->t('Only the author or an administrator can change this note.'));
 		}
 	}
 
@@ -166,6 +231,7 @@ final class NoteService {
 		string $location,
 		string $linkUrl,
 		string $linkLabel,
+		bool $isDraft,
 	): array {
 		$title = trim($title);
 		$content = trim($content);
@@ -173,29 +239,28 @@ final class NoteService {
 		$linkUrl = trim($linkUrl);
 		$linkLabel = trim($linkLabel);
 
-		$this->assertLength($title, 1, 255, 'title', 'Please enter a title.');
-		$this->assertLength($content, 0, 10_000, 'content', 'The description is too long.');
-		$this->assertLength($location, 0, 255, 'location', 'The location is too long.');
-		$this->assertLength($linkLabel, 0, 255, 'linkLabel', 'The link label is too long.');
+		$this->assertLength($title, 1, 255, 'title', $this->l10n->t('Please enter a title.'));
+		$this->assertLength($content, 0, 10_000, 'content', $this->l10n->t('The description is too long.'));
+		$this->assertLength($location, 0, 255, 'location', $this->l10n->t('The location is too long.'));
+		$this->assertLength($linkLabel, 0, 255, 'linkLabel', $this->l10n->t('The link label is too long.'));
 
 		if (strlen($linkUrl) > 2048) {
-			throw new ValidationException('The link is too long.', 'linkUrl');
+			throw new ValidationException($this->l10n->t('The link is too long.'), 'linkUrl');
 		}
 		if ($linkUrl !== '') {
 			$scheme = strtolower((string)parse_url($linkUrl, PHP_URL_SCHEME));
 			if (!filter_var($linkUrl, FILTER_VALIDATE_URL) || !in_array($scheme, ['http', 'https'], true)) {
-				throw new ValidationException('Enter a valid http or https link.', 'linkUrl');
+				throw new ValidationException($this->l10n->t('Enter a valid http or https link.'), 'linkUrl');
 			}
 		}
 
 		if ($eventStart !== null && $eventStart < 0) {
-			throw new ValidationException('The start date is invalid.', 'eventStart');
+			throw new ValidationException($this->l10n->t('The start date is invalid.'), 'eventStart');
 		}
-		if ($eventEnd !== null && $eventStart === null) {
-			throw new ValidationException('Choose a start date before an end date.', 'eventStart');
-		}
+		// Both dates are independently optional: they bound the period in which
+		// the note is on the board, so "hide after this date" is valid on its own.
 		if ($eventStart !== null && $eventEnd !== null && $eventEnd < $eventStart) {
-			throw new ValidationException('The end date must be after the start date.', 'eventEnd');
+			throw new ValidationException($this->l10n->t('The end date must be after the start date.'), 'eventEnd');
 		}
 
 		$cleanCategories = [];
@@ -207,12 +272,19 @@ final class NoteService {
 			if ($category === '') {
 				continue;
 			}
-			$this->assertLength($category, 1, 40, 'categories', 'A category is too long.');
+			$this->assertLength($category, 1, 40, 'categories', $this->l10n->t('A category is too long.'));
 			$cleanCategories[mb_strtolower($category)] = $category;
 		}
 		$cleanCategories = array_values($cleanCategories);
 		if (count($cleanCategories) > self::MAX_CATEGORIES) {
-			throw new ValidationException('Use no more than 12 categories.', 'categories');
+			throw new ValidationException(
+				$this->l10n->n(
+					'Use no more than %n category.',
+					'Use no more than %n categories.',
+					self::MAX_CATEGORIES,
+				),
+				'categories',
+			);
 		}
 
 		return [
@@ -225,6 +297,7 @@ final class NoteService {
 			'location' => $location,
 			'linkUrl' => $linkUrl,
 			'linkLabel' => $linkLabel,
+			'isDraft' => $isDraft,
 		];
 	}
 
@@ -242,6 +315,7 @@ final class NoteService {
 		$note->setLocation($values['location'] !== '' ? $values['location'] : null);
 		$note->setLinkUrl($values['linkUrl'] !== '' ? $values['linkUrl'] : null);
 		$note->setLinkLabel($values['linkLabel'] !== '' ? $values['linkLabel'] : null);
+		$note->setIsDraft($values['isDraft']);
 	}
 
 	private function assertLength(

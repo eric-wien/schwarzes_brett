@@ -12,6 +12,7 @@ namespace OCA\SchwarzesBrett\Controller;
 use OCA\SchwarzesBrett\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -26,6 +27,7 @@ final class PageController extends Controller {
 	}
 
 	#[NoAdminRequired]
+	#[NoCSRFRequired]
 	public function index(): TemplateResponse {
 		return new TemplateResponse(Application::APP_ID, 'main', [
 			'apiUrl' => $this->urlGenerator->linkToRoute('schwarzes_brett.note.index'),

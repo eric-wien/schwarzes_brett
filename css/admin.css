@@ -1,0 +1,64 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Schwarzes Brett contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+.sb-admin {
+	max-inline-size: 720px;
+}
+
+.sb-admin__intro {
+	max-inline-size: 62ch;
+	color: var(--color-text-maxcontrast);
+}
+
+.sb-admin__toggle {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin-block: 24px;
+	cursor: pointer;
+}
+
+.sb-admin__toggle input {
+	margin-block-start: 4px;
+}
+
+.sb-admin__toggle span {
+	display: grid;
+	gap: 4px;
+}
+
+.sb-admin__toggle small,
+.sb-admin__field small {
+	display: block;
+	max-inline-size: 62ch;
+	color: var(--color-text-maxcontrast);
+}
+
+.sb-admin__field {
+	display: grid;
+	gap: 8px;
+	max-inline-size: 560px;
+}
+
+.sb-admin__field > label {
+	font-weight: 600;
+}
+
+.sb-admin__field select {
+	box-sizing: border-box;
+	inline-size: 100%;
+	min-block-size: 180px;
+}
+
+.sb-admin__actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-block-start: 20px;
+}
+
+#sb-settings-status {
+	color: var(--color-text-maxcontrast);
+}

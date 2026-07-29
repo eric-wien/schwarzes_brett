@@ -1,713 +1,1333 @@
 /*
  * SPDX-FileCopyrightText: 2026 Schwarzes Brett contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * The whole stylesheet is built on Nextcloud's design tokens, so every server
+ * theme (default, light, dark, and both high-contrast variants) is covered
+ * automatically. Only values Nextcloud has no token for - elevation, the page
+ * tint, and the decorative note accents - are resolved per theme below.
  */
 
-:root {
-	--board-paper: color-mix(in srgb, var(--color-main-background, #fff) 94%, #f3b85d);
-	--board-paper-strong: color-mix(in srgb, var(--color-main-background, #fff) 88%, #e9a33a);
-	--board-ink-muted: var(--color-text-maxcontrast, #5f6368);
-	--board-border: var(--color-border, #d8d8d8);
-	--board-shadow: 0 10px 30px rgba(33, 28, 20, .08);
-	--board-radius: 18px;
+/* ------------------------------------------------------------------ tokens */
+
+.sb {
+	--sb-page: color-mix(in srgb, var(--color-main-text) 4%, var(--color-main-background));
+	--sb-surface: var(--color-main-background);
+	--sb-surface-hover: var(--color-background-hover);
+	--sb-surface-sunken: var(--color-background-dark);
+	--sb-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 6px rgba(0, 0, 0, .05);
+	--sb-shadow-raised: 0 2px 4px rgba(0, 0, 0, .05), 0 10px 24px rgba(0, 0, 0, .09);
+	--sb-shadow-overlay: 0 12px 48px rgba(0, 0, 0, .22);
+
+	--sb-accent-1: #3b82c4;
+	--sb-accent-2: #12a08a;
+	--sb-accent-3: #6d9f28;
+	--sb-accent-4: #cf8a11;
+	--sb-accent-5: #d4576b;
+	--sb-accent-6: #8a6ae0;
+
+	/* Not theme-switched: a hair off the dialog surface in both directions. */
+	--sb-inset: color-mix(in srgb, var(--color-main-text) 4%, var(--color-main-background));
+
+	--sb-content-width: 1560px;
+	--sb-gutter: clamp(16px, 3vw, 40px);
+	--sb-radius: var(--border-radius-container, 12px);
+	--sb-radius-lg: var(--border-radius-container-large, 16px);
+	--sb-tap: max(36px, var(--default-clickable-area, 34px));
 }
 
-.board {
+/* Dark surfaces are lifted above the page instead of being tinted. */
+body[data-theme-dark] .sb,
+body[data-theme-dark-highcontrast] .sb {
+	--sb-page: var(--color-main-background);
+	--sb-surface: var(--color-background-hover);
+	--sb-surface-hover: var(--color-background-dark);
+	--sb-surface-sunken: var(--color-background-darker);
+	--sb-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+	--sb-shadow-raised: 0 2px 4px rgba(0, 0, 0, .4), 0 12px 28px rgba(0, 0, 0, .45);
+	--sb-shadow-overlay: 0 12px 48px rgba(0, 0, 0, .6);
+
+	--sb-accent-1: #5aa0e0;
+	--sb-accent-2: #35c0a6;
+	--sb-accent-3: #91c04a;
+	--sb-accent-4: #e0a63a;
+	--sb-accent-5: #ea7d8d;
+	--sb-accent-6: #a68cf0;
+}
+
+/* The default theme follows the operating system. */
+@media (prefers-color-scheme: dark) {
+	body[data-theme-default] .sb {
+		--sb-page: var(--color-main-background);
+		--sb-surface: var(--color-background-hover);
+		--sb-surface-hover: var(--color-background-dark);
+		--sb-surface-sunken: var(--color-background-darker);
+		--sb-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+		--sb-shadow-raised: 0 2px 4px rgba(0, 0, 0, .4), 0 12px 28px rgba(0, 0, 0, .45);
+		--sb-shadow-overlay: 0 12px 48px rgba(0, 0, 0, .6);
+
+		--sb-accent-1: #5aa0e0;
+		--sb-accent-2: #35c0a6;
+		--sb-accent-3: #91c04a;
+		--sb-accent-4: #e0a63a;
+		--sb-accent-5: #ea7d8d;
+		--sb-accent-6: #a68cf0;
+	}
+
+	/* An explicitly chosen light theme still wins inside the dark query. */
+	body[data-theme-light] .sb,
+	body[data-theme-light-highcontrast] .sb {
+		--sb-page: color-mix(in srgb, var(--color-main-text) 4%, var(--color-main-background));
+		--sb-surface: var(--color-main-background);
+		--sb-surface-hover: var(--color-background-hover);
+		--sb-surface-sunken: var(--color-background-dark);
+		--sb-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 6px rgba(0, 0, 0, .05);
+		--sb-shadow-raised: 0 2px 4px rgba(0, 0, 0, .05), 0 10px 24px rgba(0, 0, 0, .09);
+		--sb-shadow-overlay: 0 12px 48px rgba(0, 0, 0, .22);
+
+		--sb-accent-1: #3b82c4;
+		--sb-accent-2: #12a08a;
+		--sb-accent-3: #6d9f28;
+		--sb-accent-4: #cf8a11;
+		--sb-accent-5: #d4576b;
+		--sb-accent-6: #8a6ae0;
+	}
+}
+
+/* The high-contrast themes drop decoration that would dilute the contrast. */
+body[data-theme-light-highcontrast] .sb,
+body[data-theme-dark-highcontrast] .sb {
+	--sb-shadow: none;
+	--sb-shadow-raised: none;
+}
+
+.sb-sprite {
+	position: absolute;
+	inline-size: 0;
+	block-size: 0;
+	overflow: hidden;
+}
+
+/* -------------------------------------------------------------------- shell */
+
+/*
+ * #content is a flex row, so the app root has to claim the remaining space
+ * itself; without this it collapses to the width of its widest text node.
+ */
+.sb {
+	flex: 1 1 auto;
+	min-inline-size: 0;
 	box-sizing: border-box;
-	min-block-size: 100%;
-	padding: clamp(22px, 4vw, 52px);
-	overflow-y: auto;
-	background:
-		radial-gradient(circle at 8% 3%, color-mix(in srgb, var(--color-primary-element, #00679e) 10%, transparent) 0, transparent 28rem),
-		linear-gradient(135deg, var(--color-main-background, #fff), color-mix(in srgb, var(--color-main-background, #fff) 96%, #f3b85d));
-	color: var(--color-main-text, #222);
+	block-size: 100%;
+	overflow: hidden auto;
+	background-color: var(--sb-page);
+	color: var(--color-main-text);
+	overscroll-behavior-y: contain;
 }
 
-.board *,
-.board *::before,
-.board *::after {
+.sb *,
+.sb *::before,
+.sb *::after {
 	box-sizing: border-box;
 }
 
-.board__hero,
-.board__toolbar,
-.board-grid,
-.board-status,
-.board-empty {
-	inline-size: min(1440px, 100%);
+/*
+ * Nextcloud's reset contains `article,aside,dialog,figure,footer,…{display:block}`
+ * and every component below sets a display of its own, so both the `hidden`
+ * attribute and `dialog:not([open])` lose against author styles. Restore them
+ * once for the whole app instead of per component.
+ */
+.sb [hidden] {
+	display: none !important;
+}
+
+.sb-dialog:not([open]) {
+	display: none;
+}
+
+.sb__header {
+	position: sticky;
+	z-index: 20;
+	inset-block-start: 0;
+	padding: 18px var(--sb-gutter) 12px;
+	border-block-end: 1px solid var(--color-border);
+	background-color: var(--color-main-background-translucent, var(--sb-page));
+	-webkit-backdrop-filter: var(--filter-background-blur, none);
+	backdrop-filter: var(--filter-background-blur, none);
+}
+
+.sb__header-inner,
+.sb-toolbar,
+.sb__body > * {
+	inline-size: min(var(--sb-content-width), 100%);
 	margin-inline: auto;
 }
 
-.board__hero {
+.sb__header-inner {
 	display: flex;
-	align-items: end;
+	align-items: center;
 	justify-content: space-between;
-	gap: 24px;
-	margin-block-end: 30px;
+	gap: 16px;
 }
 
-.board__hero-copy {
-	max-inline-size: 760px;
+.sb__body {
+	padding: 24px var(--sb-gutter) 64px;
 }
 
-.board__eyebrow {
-	margin: 0 0 7px;
-	color: var(--color-primary-element, #00679e);
-	font-size: 12px;
-	font-weight: 800;
-	letter-spacing: .11em;
-	line-height: 1.25;
-	text-transform: uppercase;
+/* -------------------------------------------------------------------- title */
+
+.sb-title {
+	display: flex;
+	min-inline-size: 0;
+	align-items: center;
+	gap: 12px;
 }
 
-.board h1 {
+.sb-title__mark {
+	display: grid;
+	inline-size: 40px;
+	block-size: 40px;
+	flex: 0 0 auto;
+	place-items: center;
+	border-radius: var(--border-radius-element, 8px);
+	background-color: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+}
+
+.sb-title__mark svg {
+	inline-size: 24px;
+	block-size: 24px;
+	fill: currentColor;
+}
+
+.sb-title__text {
+	display: flex;
+	min-inline-size: 0;
+	flex-direction: column;
+}
+
+.sb-title__name {
 	margin: 0;
-	font-size: clamp(34px, 5vw, 60px);
-	font-weight: 750;
-	letter-spacing: -.045em;
-	line-height: 1;
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: -.01em;
+	line-height: 1.2;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-.board__intro {
-	margin: 13px 0 0;
-	color: var(--board-ink-muted);
-	font-size: clamp(16px, 2vw, 20px);
-	line-height: 1.5;
+.sb-title__claim {
+	color: var(--color-text-maxcontrast);
+	font-size: var(--font-size-small, 13px);
+	line-height: 1.35;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-.board-button {
+/* ------------------------------------------------------------------ buttons */
+
+/*
+ * Nextcloud's global button styling is `button:not(.button-vue,[class^=vs__])`,
+ * which counts as one class plus one type. A bare `.sb-button` would lose, so
+ * every button rule below is anchored on `.sb` to stay ahead of it.
+ */
+.sb .sb-button {
 	display: inline-flex;
-	min-block-size: 44px;
+	min-block-size: var(--sb-tap);
+	max-inline-size: 100%;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: 6px;
 	margin: 0;
-	padding: 9px 17px;
+	padding-inline: 14px;
+	padding-block: 4px;
 	border: 1px solid transparent;
-	border-radius: 12px;
+	border-radius: var(--border-radius-element, 8px);
+	background-color: transparent;
+	box-shadow: none;
+	color: var(--color-main-text);
 	font: inherit;
-	font-weight: 700;
-	line-height: 1.2;
+	font-weight: 600;
+	line-height: 1.25;
+	text-decoration: none;
 	cursor: pointer;
-	transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+	transition: background-color var(--animation-quick, 100ms) ease-in-out,
+		border-color var(--animation-quick, 100ms) ease-in-out;
 }
 
-.board-button:hover {
-	transform: translateY(-1px);
+.sb .sb-button > span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-.board-button:focus-visible,
-.board-icon-button:focus-visible,
-.board input:focus-visible,
-.board textarea:focus-visible,
-.board select:focus-visible,
-.board a:focus-visible {
-	outline: 2px solid var(--color-primary-element, #00679e);
-	outline-offset: 2px;
-}
-
-.board-button:disabled {
-	opacity: .65;
-	cursor: wait;
-	transform: none;
-}
-
-.board-button--primary {
-	background: var(--color-primary-element, #00679e);
-	box-shadow: 0 7px 18px color-mix(in srgb, var(--color-primary-element, #00679e) 24%, transparent);
-	color: var(--color-primary-element-text, #fff);
-}
-
-.board-button--secondary {
-	border-color: var(--board-border);
-	background: var(--color-main-background, #fff);
-	color: var(--color-main-text, #222);
-}
-
-.board-button--quiet {
-	background: transparent;
-	color: var(--color-main-text, #222);
-}
-
-.board-button--danger {
-	border-color: color-mix(in srgb, var(--color-error, #d12f2f) 35%, transparent);
-	background: color-mix(in srgb, var(--color-error, #d12f2f) 9%, transparent);
-	color: var(--color-error, #c52424);
-}
-
-.board__toolbar {
-	display: grid;
-	grid-template-columns: minmax(240px, 1fr) minmax(160px, auto) minmax(160px, auto) auto;
-	align-items: center;
-	gap: 10px;
-	margin-block-end: 24px;
-	padding: 9px;
-	border: 1px solid var(--board-border);
-	border-radius: 16px;
-	background: color-mix(in srgb, var(--color-main-background, #fff) 92%, transparent);
-	box-shadow: 0 4px 18px rgba(30, 30, 30, .04);
-}
-
-.board-search,
-.board-select {
-	position: relative;
-	display: flex;
-	align-items: center;
-}
-
-.board-search svg {
-	position: absolute;
-	inset-inline-start: 13px;
+.sb .sb-button__icon {
 	inline-size: 18px;
 	block-size: 18px;
-	fill: none;
-	stroke: var(--board-ink-muted);
-	stroke-linecap: round;
-	stroke-width: 2;
-	pointer-events: none;
+	flex: 0 0 auto;
+	fill: currentColor;
 }
 
-.board input,
-.board textarea,
-.board select {
-	min-block-size: 42px;
-	inline-size: 100%;
-	margin: 0;
-	border: 1px solid var(--board-border);
-	border-radius: 10px;
-	background-color: var(--color-main-background, #fff);
-	color: var(--color-main-text, #222);
+.sb .sb-button--primary {
+	background-color: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+}
+
+.sb .sb-button--primary:hover:not(:disabled) {
+	background-color: var(--color-primary-element-hover);
+}
+
+.sb .sb-button--secondary {
+	border-color: var(--color-border-maxcontrast);
+	background-color: var(--sb-surface);
+}
+
+.sb .sb-button--secondary:hover:not(:disabled) {
+	background-color: var(--sb-surface-hover);
+}
+
+.sb .sb-button--tertiary:hover:not(:disabled) {
+	background-color: var(--color-background-hover);
+}
+
+.sb .sb-button--danger {
+	color: var(--color-error-text, var(--color-error));
+}
+
+.sb .sb-button--danger:hover:not(:disabled) {
+	background-color: color-mix(in srgb, var(--color-error) 12%, transparent);
+}
+
+.sb .sb-button:disabled {
+	opacity: .5;
+	cursor: default;
+}
+
+/*
+ * Nextcloud repaints every focused, hovered and active button through
+ * `button:not(…):focus` and friends, which counts one higher than a plain
+ * `.sb .sb-button--primary` and would turn a focused button into a flat tinted
+ * box. Re-assert each variant for those states with one class more.
+ */
+.sb .sb-button:is(:focus, :focus-visible, :active),
+.sb .sb-icon-button:is(:focus, :focus-visible, :active) {
+	background-color: transparent;
+	color: var(--color-main-text);
+}
+
+.sb .sb-button--primary:is(:focus, :focus-visible, :active) {
+	background-color: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+}
+
+.sb .sb-button--secondary:is(:focus, :focus-visible, :active) {
+	background-color: var(--sb-surface);
+}
+
+.sb .sb-button--danger:is(:focus, :focus-visible, :active) {
+	color: var(--color-error-text, var(--color-error));
+}
+
+.sb .sb-icon-button {
+	display: inline-flex;
+	inline-size: var(--sb-tap);
+	min-inline-size: 0;
+	block-size: var(--sb-tap);
+	min-block-size: 0;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: 0;
+	border-radius: var(--border-radius-element, 8px);
+	background-color: transparent;
+	box-shadow: none;
+	color: var(--color-main-text);
+	cursor: pointer;
+	transition: background-color var(--animation-quick, 100ms) ease-in-out;
+}
+
+.sb .sb-icon-button svg {
+	inline-size: 18px;
+	block-size: 18px;
+	fill: currentColor;
+}
+
+.sb .sb-icon-button:hover {
+	background-color: var(--color-background-hover);
+}
+
+/*
+ * Nextcloud's generic focus style is `box-shadow: 0 0 0 4px <page background>`
+ * plus a 2px outline, both !important. On a coloured button that paints a dark
+ * ring between the button and the outline, which reads as a muddy smudge, so it
+ * is replaced by a single outline offset from the control. !important is needed
+ * to win against theirs.
+ */
+.sb :is(button, a, input, textarea, select, label.sb-upload__trigger):focus-visible {
+	outline: 2px solid var(--color-main-text) !important;
+	outline-offset: 2px !important;
+	box-shadow: none !important;
+}
+
+/* ------------------------------------------------------------------ toolbar */
+
+/* --------------------------------------------------------------------- tabs */
+
+.sb-tabs {
+	display: flex;
+	gap: 4px;
+	margin-block-start: 14px;
+	border-block-end: 1px solid var(--color-border);
+}
+
+.sb .sb-tab {
+	display: inline-flex;
+	min-block-size: 36px;
+	align-items: center;
+	gap: 6px;
+	margin: 0 0 -1px;
+	padding: 4px 12px;
+	border: 0;
+	border-block-end: 2px solid transparent;
+	border-radius: var(--border-radius-element, 8px) var(--border-radius-element, 8px) 0 0;
+	background-color: transparent;
+	box-shadow: none;
+	color: var(--color-text-maxcontrast);
 	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color var(--animation-quick, 100ms) ease-in-out,
+		color var(--animation-quick, 100ms) ease-in-out;
 }
 
-.board input,
-.board select {
-	padding: 8px 12px;
+.sb .sb-tab:hover {
+	background-color: var(--color-background-hover);
+	color: var(--color-main-text);
 }
 
-.board textarea {
-	min-block-size: 120px;
-	padding: 11px 12px;
-	resize: vertical;
-	line-height: 1.5;
+.sb .sb-tab[aria-selected='true'] {
+	border-block-end-color: var(--color-primary-element);
+	color: var(--color-main-text);
 }
 
-.board-search input {
-	padding-inline-start: 40px;
+.sb-tab__count {
+	padding: 1px 7px;
+	border-radius: var(--border-radius-pill, 100px);
+	background-color: var(--color-background-dark);
+	color: var(--color-text-maxcontrast);
+	font-size: 11px;
+	font-weight: 700;
 }
 
-.board__result-count {
-	min-inline-size: 75px;
+.sb .sb-tab[aria-selected='true'] .sb-tab__count {
+	background-color: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+}
+
+.sb-toolbar {
+	display: grid;
+	grid-template-columns: minmax(160px, 360px) minmax(130px, 220px) 1fr;
+	align-items: center;
+	gap: 8px;
+	margin-block-start: 12px;
+}
+
+.sb-toolbar__count {
 	margin: 0;
-	padding-inline: 8px;
-	color: var(--board-ink-muted);
-	font-size: 13px;
+	padding-inline: 4px;
+	color: var(--color-text-maxcontrast);
+	font-size: var(--font-size-small, 13px);
 	text-align: end;
 	white-space: nowrap;
 }
 
-.board-status {
+.sb-field {
+	position: relative;
 	display: flex;
-	min-block-size: 160px;
+	min-inline-size: 0;
+	align-items: center;
+}
+
+.sb-field__icon {
+	position: absolute;
+	inset-inline-start: 10px;
+	inline-size: 18px;
+	block-size: 18px;
+	fill: var(--color-text-maxcontrast);
+	pointer-events: none;
+}
+
+/* Overrides for the shared control padding live next to it, further down. */
+
+/* ------------------------------------------------------------- form controls */
+
+.sb :is(input[type=text], input[type=search], input[type=url], input[type=datetime-local], textarea, select) {
+	min-block-size: var(--sb-tap);
+	inline-size: 100%;
+	min-inline-size: 0;
+	margin: 0;
+	padding-block: 6px;
+	padding-inline: 10px;
+	border: var(--border-width-input, 1px) solid var(--color-border-maxcontrast);
+	border-radius: var(--border-radius-element, 8px);
+	background-color: var(--sb-surface);
+	color: var(--color-main-text);
+	font: inherit;
+	appearance: none;
+}
+
+.sb select {
+	cursor: pointer;
+}
+
+/*
+ * These two need one class more than the shared control rule above, otherwise
+ * its `padding-inline` shorthand wins and the icons overlap the text.
+ */
+.sb .sb-field--search input[type=search] {
+	padding-inline-start: 34px;
+}
+
+.sb .sb-field--select select {
+	padding-inline-end: 30px;
+}
+
+/* Masked instead of a background image so the arrow follows the theme colour. */
+.sb-field--select::after {
+	content: '';
+	position: absolute;
+	inset-inline-end: 8px;
+	inline-size: 18px;
+	block-size: 18px;
+	background-color: var(--color-text-maxcontrast);
+	-webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.4 8.6 12 13.2l4.6-4.6L18 10l-6 6-6-6z"/></svg>') center / contain no-repeat;
+	mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.4 8.6 12 13.2l4.6-4.6L18 10l-6 6-6-6z"/></svg>') center / contain no-repeat;
+	pointer-events: none;
+}
+
+.sb textarea {
+	min-block-size: 110px;
+	padding-block: 8px;
+	line-height: var(--default-line-height, 1.5);
+	resize: vertical;
+}
+
+/* `box-shadow: none` undoes the ring Nextcloud puts on every focused input. */
+.sb :is(input, textarea, select):hover:not(:disabled),
+.sb :is(input, textarea, select):focus,
+.sb :is(input, textarea, select):active {
+	border-color: var(--color-primary-element);
+	box-shadow: none;
+	outline: none;
+}
+
+.sb ::placeholder {
+	color: var(--color-text-maxcontrast);
+	opacity: 1;
+}
+
+/* --------------------------------------------------------- status and empty */
+
+.sb-status {
+	display: flex;
+	min-block-size: 180px;
 	align-items: center;
 	justify-content: center;
 	gap: 10px;
-	color: var(--board-ink-muted);
+	color: var(--color-text-maxcontrast);
 }
 
-.board-spinner {
+.sb-spinner {
 	inline-size: 18px;
 	block-size: 18px;
-	border: 2px solid var(--board-border);
-	border-block-start-color: var(--color-primary-element, #00679e);
+	flex: 0 0 auto;
+	border: 2px solid var(--color-border-maxcontrast);
+	border-block-start-color: var(--color-primary-element);
 	border-radius: 50%;
-	animation: board-spin .8s linear infinite;
+	animation: sb-spin .8s linear infinite;
 }
 
-@keyframes board-spin {
-	to { transform: rotate(360deg); }
+@keyframes sb-spin {
+	to {
+		transform: rotate(360deg);
+	}
 }
 
-.board-grid {
+.sb-empty {
+	display: grid;
+	min-block-size: min(56vh, 460px);
+	place-items: center;
+	align-content: center;
+	padding: 40px 20px;
+	text-align: center;
+}
+
+.sb-empty__mark {
+	display: grid;
+	inline-size: 64px;
+	block-size: 64px;
+	margin-block-end: 18px;
+	place-items: center;
+	border-radius: var(--sb-radius-lg);
+	background-color: var(--sb-surface);
+	box-shadow: var(--sb-shadow);
+	color: var(--color-text-maxcontrast);
+}
+
+.sb-empty__mark svg {
+	inline-size: 32px;
+	block-size: 32px;
+	fill: currentColor;
+}
+
+.sb-empty h2 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.sb-empty p {
+	max-inline-size: 42ch;
+	margin: 8px 0 20px;
+	color: var(--color-text-maxcontrast);
+	line-height: var(--default-line-height, 1.5);
+}
+
+/* --------------------------------------------------------------------- grid */
+
+.sb-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
 	align-items: start;
-	gap: 20px;
+	gap: 16px;
 }
 
-.board-card {
+/*
+ * Notes differ wildly in height, so a plain row grid leaves large holes. The
+ * class is added by the script once it can measure the cards, and it only
+ * switches the row track to a small unit - the spans themselves are set per
+ * card in JavaScript. Without the script the grid stays a normal row grid.
+ */
+.sb-grid--masonry {
+	grid-auto-rows: 4px;
+}
+
+.sb-card {
 	position: relative;
 	display: flex;
 	min-inline-size: 0;
 	flex-direction: column;
 	overflow: hidden;
-	border: 1px solid color-mix(in srgb, var(--board-border) 70%, #ba822e);
-	border-radius: var(--board-radius);
-	background: var(--board-paper);
-	box-shadow: var(--board-shadow);
-	transition: transform .18s ease, box-shadow .18s ease;
+	border: 1px solid var(--color-border);
+	border-radius: var(--sb-radius);
+	background-color: var(--sb-surface);
+	box-shadow: var(--sb-shadow);
+	transition: box-shadow var(--animation-quick, 100ms) ease-in-out,
+		border-color var(--animation-quick, 100ms) ease-in-out;
 }
 
-.board-card:nth-child(4n + 2) {
-	background: color-mix(in srgb, var(--color-main-background, #fff) 94%, #dd8fa1);
-}
-
-.board-card:nth-child(4n + 3) {
-	background: color-mix(in srgb, var(--color-main-background, #fff) 94%, #87c4ac);
-}
-
-.board-card:nth-child(4n + 4) {
-	background: color-mix(in srgb, var(--color-main-background, #fff) 94%, #8bb7e2);
-}
-
-.board-card:hover {
-	transform: translateY(-3px);
-	box-shadow: 0 16px 34px rgba(33, 28, 20, .13);
-}
-
-.board-card:target {
-	outline: 3px solid var(--color-primary-element, #00679e);
-	outline-offset: 3px;
-}
-
-.board-card__pin {
+.sb-card::before {
+	content: '';
 	position: absolute;
 	z-index: 2;
-	inset-block-start: 12px;
-	inset-inline-start: 50%;
-	inline-size: 11px;
-	block-size: 11px;
-	border: 2px solid rgba(255, 255, 255, .8);
-	border-radius: 50%;
-	background: #cf4545;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, .25);
-	transform: translateX(-50%);
+	inset-block-start: 0;
+	inset-inline: 0;
+	block-size: 3px;
+	background-color: var(--sb-accent, var(--color-primary-element));
 }
 
-.board-card__image-wrap {
+.sb-card:hover {
+	border-color: var(--color-border-maxcontrast);
+	box-shadow: var(--sb-shadow-raised);
+}
+
+.sb-card:target {
+	border-color: var(--color-primary-element);
+	box-shadow: 0 0 0 2px var(--color-primary-element);
+}
+
+.sb-card[data-accent='0'] { --sb-accent: var(--color-border-maxcontrast); }
+.sb-card[data-accent='1'] { --sb-accent: var(--sb-accent-1); }
+.sb-card[data-accent='2'] { --sb-accent: var(--sb-accent-2); }
+.sb-card[data-accent='3'] { --sb-accent: var(--sb-accent-3); }
+.sb-card[data-accent='4'] { --sb-accent: var(--sb-accent-4); }
+.sb-card[data-accent='5'] { --sb-accent: var(--sb-accent-5); }
+.sb-card[data-accent='6'] { --sb-accent: var(--sb-accent-6); }
+
+.sb-card__figure {
+	margin: 0;
 	aspect-ratio: 16 / 9;
 	overflow: hidden;
-	background: var(--board-paper-strong);
+	background-color: var(--sb-surface-sunken);
 }
 
-.board-card__image {
+.sb-card__image {
 	display: block;
 	inline-size: 100%;
 	block-size: 100%;
 	object-fit: cover;
 }
 
-.board-card__body {
+.sb-card__body {
 	display: flex;
 	flex: 1;
 	flex-direction: column;
-	padding: 24px 22px 19px;
+	padding: 16px;
 }
 
-.board-card__categories {
+.sb-card__head {
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+}
+
+.sb-card__title {
+	min-inline-size: 0;
+	flex: 1;
+	margin: 0;
+	font-size: 17px;
+	font-weight: 700;
+	letter-spacing: -.005em;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+/*
+ * The title doubles as the button that opens the note, so the full text stays
+ * reachable when the description is clamped. The rest of the card body opens it
+ * too, via a click handler that ignores links and buttons.
+ */
+.sb .sb-card__open {
+	display: block;
+	inline-size: 100%;
+	min-block-size: 0;
+	margin: 0;
+	padding: 3px 0 0;
+	border: 0;
+	border-radius: var(--border-radius-small, 4px);
+	background-color: transparent;
+	box-shadow: none;
+	color: inherit;
+	font: inherit;
+	text-align: start;
+	cursor: pointer;
+}
+
+.sb-card__body {
+	cursor: pointer;
+}
+
+.sb-card:hover .sb-card__title {
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 2px;
+}
+
+.sb .sb-card__approve,
+.sb .sb-card__edit {
+	margin-block-start: -4px;
+	color: var(--color-text-maxcontrast);
+}
+
+.sb .sb-card__edit {
+	margin-inline-end: -6px;
+}
+
+.sb .sb-card__approve:hover,
+.sb .sb-card__edit:hover {
+	color: var(--color-main-text);
+}
+
+.sb-card__tags {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
-	margin-block-end: 13px;
+	gap: 4px;
+	margin-block-start: 10px;
 }
 
-.board-chip {
+/* Marks why a note is not on the board, in the drafts and archive tabs. */
+.sb-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	align-self: flex-start;
+	margin-block-start: 10px;
+	padding: 2px 8px;
+	border: 1px solid var(--color-border-maxcontrast);
+	border-radius: var(--border-radius-pill, 100px);
+	color: var(--color-text-maxcontrast);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: .02em;
+	line-height: 1.5;
+	text-transform: uppercase;
+}
+
+.sb-tag {
 	display: inline-flex;
 	max-inline-size: 100%;
 	align-items: center;
-	padding: 4px 8px;
+	padding: 2px 8px;
 	overflow: hidden;
-	border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-	border-radius: 999px;
-	background: color-mix(in srgb, var(--color-main-background, #fff) 58%, transparent);
-	color: var(--color-main-text, #222);
+	border-radius: var(--border-radius-pill, 100px);
+	background-color: var(--color-background-dark);
+	color: var(--color-text-maxcontrast);
 	font-size: 11px;
-	font-weight: 750;
-	letter-spacing: .025em;
-	line-height: 1.2;
+	font-weight: 600;
+	line-height: 1.5;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.board-card__title-row {
-	display: flex;
-	align-items: start;
-	gap: 10px;
-}
-
-.board-card__title {
-	min-inline-size: 0;
-	flex: 1;
-	margin: 0;
-	font-size: 22px;
-	font-weight: 750;
-	letter-spacing: -.02em;
-	line-height: 1.18;
-	overflow-wrap: anywhere;
-}
-
-.board-icon-button {
-	display: inline-flex;
-	inline-size: 36px;
-	block-size: 36px;
-	flex: 0 0 auto;
-	align-items: center;
-	justify-content: center;
-	margin: -7px -7px 0 0;
-	padding: 0;
-	border: 0;
-	border-radius: 50%;
-	background: transparent;
-	color: var(--board-ink-muted);
-	font: inherit;
-	font-size: 24px;
-	line-height: 1;
-	cursor: pointer;
-}
-
-.board-icon-button:hover {
-	background: color-mix(in srgb, var(--color-main-text, #222) 8%, transparent);
-}
-
-.board-card__content {
+.sb-card__text {
 	display: -webkit-box;
-	margin: 12px 0 0;
+	margin: 10px 0 0;
 	overflow: hidden;
-	color: color-mix(in srgb, var(--color-main-text, #222) 84%, transparent);
-	line-height: 1.55;
+	color: color-mix(in srgb, var(--color-main-text) 82%, transparent);
+	font-size: 14px;
+	line-height: 1.5;
 	overflow-wrap: anywhere;
 	white-space: pre-line;
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 6;
+	line-clamp: 6;
 }
 
-.board-card__details {
+.sb-card__meta {
 	display: grid;
-	gap: 8px;
-	margin-block-start: 18px;
-	padding-block-start: 15px;
-	border-block-start: 1px solid color-mix(in srgb, var(--color-main-text, #222) 12%, transparent);
+	gap: 6px;
+	margin-block-start: 14px;
 }
 
-.board-detail {
+.sb-meta {
 	display: flex;
-	align-items: start;
-	gap: 9px;
-	color: var(--board-ink-muted);
-	font-size: 13px;
+	min-inline-size: 0;
+	align-items: flex-start;
+	gap: 8px;
+	color: var(--color-text-maxcontrast);
+	font-size: var(--font-size-small, 13px);
 	line-height: 1.4;
 }
 
-.board-detail__icon {
-	inline-size: 18px;
-	flex: 0 0 18px;
-	text-align: center;
+.sb-meta svg {
+	inline-size: 16px;
+	block-size: 16px;
+	flex: 0 0 16px;
+	margin-block-start: 1px;
+	fill: currentColor;
 }
 
-.board-card__link {
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	color: var(--color-primary-element, #00679e);
-	font-weight: 700;
-	text-decoration: none;
+.sb-meta > span {
+	min-inline-size: 0;
 	overflow-wrap: anywhere;
 }
 
-.board-card__footer {
+.sb-card__link {
+	min-inline-size: 0;
+	color: var(--color-primary-element);
+	font-weight: 600;
+	overflow-wrap: anywhere;
+	text-decoration: none;
+}
+
+.sb-card__link:hover {
+	text-decoration: underline;
+}
+
+.sb-card__foot {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
+	gap: 10px;
 	margin-block-start: auto;
-	padding-block-start: 18px;
-	color: var(--board-ink-muted);
+	padding-block-start: 14px;
+	color: var(--color-text-maxcontrast);
 	font-size: 12px;
 }
 
-.board-card__author {
+.sb-card__author {
+	display: flex;
 	min-inline-size: 0;
+	align-items: center;
+	gap: 6px;
+}
+
+.sb-card__author svg {
+	inline-size: 14px;
+	block-size: 14px;
+	flex: 0 0 14px;
+	fill: currentColor;
+}
+
+.sb-card__author span {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.board-empty {
-	display: grid;
-	min-block-size: min(52vh, 480px);
-	place-items: center;
-	align-content: center;
-	padding: 44px 20px;
-	text-align: center;
+.sb-card__date {
+	flex: 0 0 auto;
 }
 
-.board-empty[hidden] {
-	display: none;
-}
+/* -------------------------------------------------------------------- toast */
 
-.board-empty__icon {
-	display: grid;
-	inline-size: 76px;
-	block-size: 76px;
-	margin-block-end: 20px;
-	place-items: center;
-	border-radius: 24px;
-	background: var(--board-paper-strong);
-	box-shadow: var(--board-shadow);
-	font-size: 32px;
-	transform: rotate(-4deg);
-}
-
-.board-empty h2 {
-	margin: 0;
-	font-size: clamp(22px, 3vw, 30px);
-}
-
-.board-empty p {
-	max-inline-size: 440px;
-	margin: 10px 0 22px;
-	color: var(--board-ink-muted);
-	line-height: 1.5;
-}
-
-.board-toast {
+.sb-toast {
 	position: fixed;
 	z-index: 10000;
-	inset-block-end: 28px;
+	inset-block-end: 24px;
 	inset-inline-start: 50%;
-	max-inline-size: min(90vw, 520px);
-	padding: 12px 18px;
-	border-radius: 12px;
-	background: var(--color-main-text, #222);
-	box-shadow: 0 8px 30px rgba(0, 0, 0, .25);
-	color: var(--color-main-background, #fff);
-	font-weight: 650;
+	max-inline-size: min(90vw, 460px);
+	padding: 10px 16px;
+	border-radius: var(--border-radius-element, 8px);
+	background-color: var(--color-main-text);
+	box-shadow: var(--sb-shadow-overlay);
+	color: var(--color-main-background);
+	font-weight: 600;
 	transform: translateX(-50%);
 }
 
-.board-dialog {
-	inline-size: min(760px, calc(100vw - 28px));
-	max-block-size: min(900px, calc(100vh - 32px));
+/* ------------------------------------------------------------------- dialog */
+
+.sb-dialog {
+	inline-size: min(720px, calc(100vw - 24px));
+	max-inline-size: none;
+	/*
+	 * A modal dialog is `position: fixed; inset: 0`, so `auto` would stretch it
+	 * to the full viewport height and leave a short note floating in emptiness.
+	 * fit-content hugs the content and still clamps at the maximum below.
+	 */
+	block-size: fit-content;
+	max-block-size: min(880px, calc(100dvh - 32px));
+	/* Nextcloud's reset zeroes the margin a modal dialog needs to centre. */
 	margin: auto;
 	padding: 0;
-	overflow: hidden auto;
-	border: 1px solid var(--board-border);
-	border-radius: 20px;
-	background: var(--color-main-background, #fff);
-	box-shadow: 0 30px 80px rgba(0, 0, 0, .3);
-	color: var(--color-main-text, #222);
+	overflow: hidden;
+	border: 1px solid var(--color-border);
+	border-radius: var(--sb-radius-lg);
+	background-color: var(--color-main-background);
+	box-shadow: var(--sb-shadow-overlay);
+	color: var(--color-main-text);
 }
 
-.board-dialog::backdrop {
-	background: rgba(20, 24, 28, .55);
-	backdrop-filter: blur(3px);
+.sb-dialog[open] {
+	display: flex;
 }
 
-.board-dialog form {
+.sb-dialog::backdrop {
+	background-color: rgba(0, 0, 0, .5);
+}
+
+.sb-dialog__form {
+	display: flex;
+	inline-size: 100%;
+	min-block-size: 0;
+	flex-direction: column;
+}
+
+.sb-dialog__header {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 12px 14px 20px;
+	border-block-end: 1px solid var(--color-border);
+}
+
+.sb-dialog__title {
+	min-inline-size: 0;
+	flex: 1;
+	margin: 0;
+	font-size: 19px;
+	font-weight: 700;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sb-dialog__scroll {
+	flex: 1 1 auto;
+	min-block-size: 0;
+	padding: 20px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+.sb-dialog__footer {
+	display: flex;
+	flex: 0 0 auto;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 20px;
+	border-block-start: 1px solid var(--color-border);
+	background-color: var(--color-main-background);
+}
+
+.sb-dialog__spacer {
+	flex: 1;
+}
+
+.sb-alert {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin-block-end: 16px;
+	padding: 10px 12px;
+	border: 1px solid var(--color-border-error, var(--color-error));
+	border-radius: var(--border-radius-element, 8px);
+	background-color: color-mix(in srgb, var(--color-error) 10%, var(--color-main-background));
+	color: var(--color-error-text, var(--color-error));
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.sb-alert__icon {
+	inline-size: 18px;
+	block-size: 18px;
+	flex: 0 0 18px;
+	fill: currentColor;
+}
+
+/* ---------------------------------------------------------- note detail view */
+
+.sb-view__title {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.sb-view__figure {
+	margin: 0 0 16px;
+	overflow: hidden;
+	border-radius: var(--sb-radius);
+	background-color: var(--sb-surface-sunken);
+	text-align: center;
+}
+
+/*
+ * Capped rather than stretched, so the detail view shows the whole picture and
+ * a small image is not blown up to the dialog width.
+ */
+.sb-view__image {
+	display: inline-block;
+	inline-size: auto;
+	max-inline-size: 100%;
+	block-size: auto;
+	max-block-size: min(48vh, 420px);
+	object-fit: contain;
+	vertical-align: middle;
+}
+
+.sb-view__badge {
+	margin-block: 0 12px;
+}
+
+.sb-view__tags {
+	margin-block: 0 14px;
+}
+
+.sb-view__text {
+	margin: 0;
+	color: var(--color-main-text);
+	line-height: var(--default-line-height, 1.5);
+	overflow-wrap: anywhere;
+	white-space: pre-line;
+}
+
+.sb-view__meta {
+	display: grid;
+	gap: 8px;
+}
+
+.sb-view__meta:not(:empty) {
+	margin-block-start: 18px;
+	padding-block-start: 16px;
+	border-block-start: 1px solid var(--color-border);
+}
+
+.sb-view__author {
+	min-inline-size: 0;
+	color: var(--color-text-maxcontrast);
+	font-size: var(--font-size-small, 13px);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sb-form {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 18px;
-	padding: clamp(20px, 4vw, 32px);
-}
-
-.board-dialog__header,
-.board-dialog__footer,
-.board-form-error {
-	grid-column: 1 / -1;
-}
-
-.board-dialog__header {
-	display: flex;
-	align-items: start;
-	justify-content: space-between;
 	gap: 16px;
-	margin-block-end: 3px;
 }
 
-.board-dialog__header h2 {
-	margin: 0;
-	font-size: 28px;
-	letter-spacing: -.025em;
-}
-
-.board-form-error {
-	padding: 10px 13px;
-	border: 1px solid color-mix(in srgb, var(--color-error, #d12f2f) 28%, transparent);
-	border-radius: 10px;
-	background: color-mix(in srgb, var(--color-error, #d12f2f) 9%, transparent);
-	color: var(--color-error, #c52424);
-}
-
-.board-field {
+.sb-input {
 	display: flex;
 	min-inline-size: 0;
 	flex-direction: column;
-	gap: 6px;
+	gap: 4px;
 }
 
-.board-field--wide {
+.sb-input--full {
 	grid-column: 1 / -1;
 }
 
-.board-field label,
-.board-fieldset legend {
-	font-size: 13px;
-	font-weight: 750;
+.sb-input > label {
+	color: var(--color-main-text);
+	font-size: var(--font-size-small, 13px);
+	font-weight: 600;
 }
 
-.board-field small,
-.board-upload span {
-	color: var(--board-ink-muted);
+.sb-required {
+	border: 0;
+	color: var(--color-error-text, var(--color-error));
+	text-decoration: none;
+}
+
+.sb-input small {
+	color: var(--color-text-maxcontrast);
 	font-size: 12px;
 }
 
-.board-fieldset {
-	margin: 2px 0 0;
-	padding: 16px;
-	border: 1px solid var(--board-border);
-	border-radius: 13px;
+/* ----------------------------------------------- category suggestion combobox */
+
+.sb-combo {
+	position: relative;
+	display: flex;
+	min-inline-size: 0;
+	flex-direction: column;
 }
 
-.board-fieldset legend {
-	padding-inline: 6px;
+.sb-combo__list {
+	position: absolute;
+	z-index: 5;
+	inset-block-start: calc(100% + 4px);
+	inset-inline: 0;
+	max-block-size: 210px;
+	margin: 0;
+	padding: 4px;
+	overflow-y: auto;
+	border: 1px solid var(--color-border-maxcontrast);
+	border-radius: var(--border-radius-element, 8px);
+	background-color: var(--color-main-background);
+	box-shadow: var(--sb-shadow-raised);
+	list-style: none;
 }
 
-.board-form-grid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 15px;
-}
-
-.board-checkbox {
-	display: inline-flex;
-	align-items: center;
-	gap: 9px;
-	font-weight: 500 !important;
+.sb-combo__option {
+	padding: 6px 10px;
+	border-radius: var(--border-radius-small, 4px);
+	color: var(--color-main-text);
+	font-size: 14px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 	cursor: pointer;
 }
 
-.board-checkbox input {
-	inline-size: 18px;
-	block-size: 18px;
-	min-block-size: auto;
-	flex: 0 0 18px;
+.sb-combo__option:hover,
+.sb-combo__option[aria-selected='true'] {
+	background-color: var(--color-primary-element);
+	color: var(--color-primary-element-text);
 }
 
-.board-upload {
+.sb-group {
+	min-inline-size: 0;
+	margin: 0;
+	padding: 14px 16px 16px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--sb-radius);
+	background-color: var(--sb-inset);
+}
+
+.sb-group > legend {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding-inline: 6px;
+	color: var(--color-main-text);
+	font-size: var(--font-size-small, 13px);
+	font-weight: 700;
+}
+
+.sb-group > legend svg {
+	inline-size: 16px;
+	block-size: 16px;
+	fill: var(--color-text-maxcontrast);
+}
+
+.sb-checkbox {
+	display: inline-flex;
+	min-block-size: 28px;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	font-weight: 400;
+	cursor: pointer;
+}
+
+.sb .sb-checkbox input[type=checkbox] {
+	inline-size: 16px;
+	min-inline-size: 0;
+	block-size: 16px;
+	min-block-size: 0;
+	flex: 0 0 16px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	accent-color: var(--color-primary-element);
+	appearance: auto;
+	cursor: pointer;
+}
+
+.sb-upload {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 10px;
 }
 
-.board-upload input {
-	inline-size: auto;
-	max-inline-size: 100%;
-	border: 0;
-	padding: 0;
+.sb-upload__input {
+	position: absolute;
+	inline-size: 1px;
+	block-size: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
 
-.board-dialog__footer {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-block-start: 6px;
-	padding-block-start: 18px;
-	border-block-start: 1px solid var(--board-border);
+.sb-upload__trigger {
+	font-size: 14px;
 }
 
-.board-dialog__spacer {
-	flex: 1;
+.sb-upload__hint {
+	min-inline-size: 0;
+	flex: 1 1 12ch;
+	color: var(--color-text-maxcontrast);
+	font-size: 12px;
+	overflow-wrap: anywhere;
 }
 
-.visually-hidden {
-	position: absolute !important;
-	inline-size: 1px !important;
-	block-size: 1px !important;
-	padding: 0 !important;
-	overflow: hidden !important;
-	clip: rect(0, 0, 0, 0) !important;
-	white-space: nowrap !important;
-	border: 0 !important;
+.sb-visually-hidden {
+	position: absolute;
+	inline-size: 1px;
+	block-size: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
 
-@media (max-width: 820px) {
-	.board {
-		padding: 22px 15px 40px;
+/* --------------------------------------------------------------- responsive */
+
+@media (max-width: 900px) {
+	.sb-toolbar {
+		grid-template-columns: 1fr auto;
 	}
 
-	.board__hero {
-		align-items: start;
-		flex-direction: column;
-	}
-
-	.board__hero > .board-button {
-		inline-size: 100%;
-	}
-
-	.board__toolbar {
-		grid-template-columns: 1fr 1fr;
-	}
-
-	.board-search {
+	.sb-field--search {
 		grid-column: 1 / -1;
-	}
-
-	.board__result-count {
-		grid-column: 1 / -1;
-		text-align: start;
 	}
 }
 
 @media (max-width: 560px) {
-	.board__toolbar,
-	.board-dialog form,
-	.board-form-grid {
+	.sb-toolbar {
 		grid-template-columns: 1fr;
 	}
 
-	.board-search,
-	.board-field--wide,
-	.board-dialog__header,
-	.board-dialog__footer,
-	.board-form-grid > .board-field--wide,
-	.board-form-error {
-		grid-column: 1;
+	.sb-toolbar__count {
+		text-align: start;
+	}
+}
+
+@media (max-width: 700px) {
+	.sb__header {
+		padding-block: 12px 10px;
 	}
 
-	.board-card__body {
-		padding-inline: 18px;
-	}
-
-	.board-dialog {
-		inline-size: calc(100vw - 12px);
-		max-block-size: calc(100vh - 12px);
-		border-radius: 16px;
-	}
-
-	.board-dialog__footer {
-		flex-wrap: wrap;
-	}
-
-	.board-dialog__footer .board-button--primary {
-		flex: 1;
-	}
-
-	.board-dialog__spacer {
+	.sb-title__claim {
 		display: none;
 	}
 
-	.board-button--danger {
+	.sb-title__mark {
+		inline-size: 34px;
+		block-size: 34px;
+	}
+
+	.sb-title__mark svg {
+		inline-size: 20px;
+		block-size: 20px;
+	}
+
+	.sb-title__name {
+		font-size: 19px;
+	}
+
+	.sb__body {
+		padding-block: 18px 48px;
+	}
+
+	.sb-grid {
+		gap: 12px;
+	}
+
+	.sb-form {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 480px) {
+	.sb__header-inner > .sb-button--primary {
+		padding-inline: 10px;
+	}
+
+	.sb__header-inner > .sb-button--primary > span {
+		position: absolute;
+		inline-size: 1px;
+		block-size: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.sb-dialog {
 		inline-size: 100%;
+		max-inline-size: 100%;
+		block-size: 100%;
+		max-block-size: 100%;
+		margin: 0;
+		border: 0;
+		border-radius: 0;
+	}
+
+	.sb-dialog__scroll,
+	.sb-dialog__footer {
+		padding-inline: 16px;
+	}
+
+	.sb-dialog__header {
+		padding-inline: 8px 8px;
+		padding-inline-start: 16px;
+	}
+
+	.sb-dialog__footer > .sb-button--primary {
+		flex: 1 1 auto;
+	}
+
+	.sb-dialog__spacer {
+		display: none;
+	}
+
+	.sb-group {
+		padding-inline: 12px;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.board *,
-	.board *::before,
-	.board *::after {
-		scroll-behavior: auto !important;
-		transition: none !important;
+	.sb *,
+	.sb *::before,
+	.sb *::after {
+		transition-duration: .01ms !important;
 		animation-duration: .01ms !important;
 		animation-iteration-count: 1 !important;
 	}

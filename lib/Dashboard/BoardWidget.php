@@ -12,18 +12,29 @@ namespace OCA\SchwarzesBrett\Dashboard;
 use OCA\SchwarzesBrett\AppInfo\Application;
 use OCA\SchwarzesBrett\Db\Note;
 use OCA\SchwarzesBrett\Service\NoteService;
+use OCP\Dashboard\IAPIWidget;
 use OCP\Dashboard\IButtonWidget;
 use OCP\Dashboard\IIconWidget;
-use OCP\Dashboard\IReloadableWidget;
 use OCP\Dashboard\Model\WidgetButton;
 use OCP\Dashboard\Model\WidgetItem;
-use OCP\Dashboard\Model\WidgetItems;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
+use OCP\Util;
 
-final class BoardWidget implements IButtonWidget, IIconWidget, IReloadableWidget {
-	private const ITEM_LIMIT = 5;
+/**
+ * The widget renders its own list through js/dashboard.js, because a note needs
+ * more than the title and single subtitle line that Nextcloud's built-in widget
+ * rendering offers - it also shows three clamped lines of the description and
+ * the note's link.
+ *
+ * Only the version 1 item API is implemented on purpose: the Dashboard front-end
+ * takes over rendering for widgets that announce version 2, which would drop the
+ * richer layout. Version 1 keeps the items available to the mobile and desktop
+ * clients.
+ */
+final class BoardWidget implements IAPIWidget, IButtonWidget, IIconWidget {
+	public const ITEM_LIMIT = 5;
 
 	public function __construct(
 		private readonly NoteService $noteService,
@@ -50,14 +61,22 @@ final class BoardWidget implements IButtonWidget, IIconWidget, IReloadableWidget
 
 	#[\Override]
 	public function getIconClass(): string {
-		return '';
+		return 'icon-schwarzes-brett';
 	}
 
 	#[\Override]
 	public function getIconUrl(): string {
-		return $this->urlGenerator->getAbsoluteURL(
+		// The black variant: consumers render it on a normal surface and apply
+		// --background-invert-if-dark, which whitens it in the dark themes.
+		// app.svg is the white variant the app menu needs on the dark header.
+		$iconUrl = $this->urlGenerator->getAbsoluteURL(
 			$this->urlGenerator->imagePath(Application::APP_ID, 'app-dark.svg'),
 		);
+
+		// Unlike scripts and styles, this URL does not receive Nextcloud's
+		// cachebuster automatically. The revision prevents an older white copy
+		// of app-dark.svg from being inverted into black in the dark theme.
+		return $iconUrl . '?v=2';
 	}
 
 	#[\Override]
@@ -67,20 +86,22 @@ final class BoardWidget implements IButtonWidget, IIconWidget, IReloadableWidget
 
 	#[\Override]
 	public function load(): void {
-		// IAPIWidgetV2 is rendered by Nextcloud and needs no custom JavaScript.
+		// The third argument makes Nextcloud emit this script after the
+		// Dashboard app's own bundle, so OCA.Dashboard already exists.
+		Util::addScript(Application::APP_ID, 'dashboard', 'dashboard');
+		Util::addStyle(Application::APP_ID, 'dashboard');
 	}
 
+	/**
+	 * @return list<WidgetItem>
+	 */
 	#[\Override]
-	public function getItemsV2(string $userId, ?string $since = null, int $limit = 7): WidgetItems {
-		$notes = $this->noteService->findLatest(self::ITEM_LIMIT);
-		$items = array_map(
+	public function getItems(string $userId, ?string $since = null, int $limit = 7): array {
+		$notes = $this->noteService->findLatest(min($limit, self::ITEM_LIMIT));
+
+		return array_map(
 			fn (Note $note): WidgetItem => $this->toWidgetItem($note),
 			$notes,
-		);
-
-		return new WidgetItems(
-			$items,
-			$items === [] ? $this->l10n->t('No notes have been posted yet.') : '',
 		);
 	}
 
@@ -95,18 +116,12 @@ final class BoardWidget implements IButtonWidget, IIconWidget, IReloadableWidget
 		];
 	}
 
-	#[\Override]
-	public function getReloadInterval(): int {
-		return 60;
-	}
-
 	private function toWidgetItem(Note $note): WidgetItem {
 		$author = $this->userManager->get($note->getUserId())?->getDisplayName() ?? $note->getUserId();
+		// The event dates only decide whether a note is on the board or in the
+		// archive; they are deliberately not part of what a note displays.
 		$subtitleParts = [$author];
-		if ($note->getEventStart() !== null) {
-			$subtitleParts[] = $this->formatDate($note->getEventStart(), $note->getIsAllDay());
-		}
-		if ($note->getLocation() !== null) {
+		if ($note->getLocation() !== null && $note->getLocation() !== '') {
 			$subtitleParts[] = $note->getLocation();
 		}
 
@@ -122,13 +137,7 @@ final class BoardWidget implements IButtonWidget, IIconWidget, IReloadableWidget
 			implode(' · ', $subtitleParts),
 			$this->getUrl() . '#note-' . $note->getId(),
 			$iconUrl,
-			(string)$note->getCreatedAt(),
+			(string)max($note->getUpdatedAt(), $note->getCreatedAt()),
 		);
-	}
-
-	private function formatDate(int $timestamp, bool $allDay): string {
-		return $allDay
-			? date('Y-m-d', $timestamp)
-			: date('Y-m-d H:i', $timestamp);
 	}
 }
