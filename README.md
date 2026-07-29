@@ -173,6 +173,8 @@ SB_MODERATOR_PASSWORD=moderator-secret \
 
 For a production release, package the directory without development-only files
 such as `.git`, and keep the built `js/` and `css/` assets in the archive.
+`make appstore` creates the correctly structured archive. Maintainer setup and
+release steps are documented in [docs/PUBLISHING.md](docs/PUBLISHING.md).
 
 ## Data model and limits
 

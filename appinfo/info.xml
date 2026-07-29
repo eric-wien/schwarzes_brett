@@ -17,12 +17,21 @@ Orten, Bildern und Links veröffentlichen können. Die fünf neuesten Notizen si
 außerdem als Widget für das Nextcloud-Dashboard verfügbar.
 	]]></description>
 	<version>1.3.1</version>
-	<licence>agpl</licence>
-	<author mail="">Schwarzes Brett contributors</author>
+	<licence>AGPL-3.0-or-later</licence>
+	<author>Schwarzes Brett contributors</author>
 	<namespace>SchwarzesBrett</namespace>
+	<documentation>
+		<user>https://github.com/eric-wien/schwarzes_brett#readme</user>
+		<admin>https://github.com/eric-wien/schwarzes_brett#permissions</admin>
+		<developer>https://github.com/eric-wien/schwarzes_brett#development</developer>
+	</documentation>
 	<category>organization</category>
+	<website>https://github.com/eric-wien/schwarzes_brett</website>
+	<bugs>https://github.com/eric-wien/schwarzes_brett/issues</bugs>
+	<repository>https://github.com/eric-wien/schwarzes_brett</repository>
 	<dependencies>
 		<php min-version="8.2"/>
+		<lib>fileinfo</lib>
 		<nextcloud min-version="32" max-version="34"/>
 	</dependencies>
 	<settings>
