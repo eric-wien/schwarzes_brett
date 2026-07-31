@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.2 - 2026-07-31
+
+### Fixed
+
+- Declare MySQL/MariaDB, PostgreSQL, and SQLite as the supported databases so
+  Nextcloud does not apply Oracle-only schema restrictions to the app's
+  non-null boolean columns during installation.
+
 ## 1.3.1 - 2026-07-29
 
 ### Fixed
