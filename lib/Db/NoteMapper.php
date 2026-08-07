@@ -124,6 +124,12 @@ final class NoteMapper extends QBMapper {
 					$query->createNamedParameter(true, IQueryBuilder::PARAM_BOOL),
 				),
 			)
+			->andWhere(
+				$query->expr()->eq(
+					'is_archived',
+					$query->createNamedParameter(false, IQueryBuilder::PARAM_BOOL),
+				),
+			)
 			// A note is on the board between its start and end date; both are
 			// optional, and either one outside the window archives the note.
 			->andWhere(

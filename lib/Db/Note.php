@@ -31,6 +31,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setIsDraft(bool $isDraft)
  * @method bool getIsApproved()
  * @method void setIsApproved(bool $isApproved)
+ * @method bool getIsArchived()
+ * @method void setIsArchived(bool $isArchived)
  * @method string|null getLocation()
  * @method void setLocation(?string $location)
  * @method string|null getLinkUrl()
@@ -56,6 +58,7 @@ final class Note extends Entity implements JsonSerializable {
 	protected bool $isAllDay = false;
 	protected bool $isDraft = false;
 	protected bool $isApproved = true;
+	protected bool $isArchived = false;
 	protected ?string $location = null;
 	protected ?string $linkUrl = null;
 	protected ?string $linkLabel = null;
@@ -71,6 +74,7 @@ final class Note extends Entity implements JsonSerializable {
 		$this->addType('isAllDay', 'boolean');
 		$this->addType('isDraft', 'boolean');
 		$this->addType('isApproved', 'boolean');
+		$this->addType('isArchived', 'boolean');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
 	}
@@ -95,6 +99,7 @@ final class Note extends Entity implements JsonSerializable {
 			'isAllDay' => $this->isAllDay,
 			'isDraft' => $this->isDraft,
 			'isApproved' => $this->isApproved,
+			'isArchived' => $this->isArchived,
 			'location' => $this->location ?? '',
 			'linkUrl' => $this->linkUrl ?? '',
 			'linkLabel' => $this->linkLabel ?? '',

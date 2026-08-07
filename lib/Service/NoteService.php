@@ -145,6 +145,19 @@ final class NoteService {
 		return $note;
 	}
 
+	public function archive(int $id, string $userId): Note {
+		$note = $this->find($id);
+		$this->assertCanArchive($note, $userId);
+
+		if (!$note->getIsArchived()) {
+			$note->setIsArchived(true);
+			$note->setUpdatedAt(time());
+			$note = $this->mapper->update($note);
+		}
+
+		return $note;
+	}
+
 	public function approve(int $id, string $userId): Note {
 		$note = $this->find($id);
 		$this->assertCanRead($note, $userId);
@@ -153,6 +166,9 @@ final class NoteService {
 		}
 		if ($note->getIsDraft()) {
 			throw new ValidationException($this->l10n->t('Drafts cannot be approved.'));
+		}
+		if ($note->getIsArchived()) {
+			throw new ValidationException($this->l10n->t('Archived notes cannot be approved.'));
 		}
 
 		if (!$note->getIsApproved()) {
@@ -215,6 +231,18 @@ final class NoteService {
 		if ($note->getUserId() !== $userId) {
 			throw new PermissionException($this->l10n->t('Only the author or an administrator can change this note.'));
 		}
+	}
+
+	public function assertCanArchive(Note $note, string $userId): void {
+		// Preserve draft privacy: even a moderator must not be able to discover an
+		// author's private draft merely by guessing its id.
+		$this->assertCanRead($note, $userId);
+		if ($note->getUserId() === $userId || $this->moderationService->canModerate($userId)) {
+			return;
+		}
+		throw new PermissionException(
+			$this->l10n->t('Only the author, a moderator, or an administrator can archive this note.'),
+		);
 	}
 
 	/**

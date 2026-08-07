@@ -54,6 +54,19 @@ final class NoteController extends Controller {
 		}
 	}
 
+	#[NoAdminRequired]
+	public function archive(int $id): JSONResponse {
+		try {
+			$note = $this->noteService->archive($id, $this->userId);
+
+			return new JSONResponse(['note' => $this->serialize($note)]);
+		} catch (NoteNotFoundException $exception) {
+			return $this->error($exception->getMessage(), 404);
+		} catch (PermissionException $exception) {
+			return $this->error($exception->getMessage(), 403);
+		}
+	}
+
 	/**
 	 * @param int|null $limit Return only the newest notes; omit for the full board.
 	 */
@@ -172,9 +185,14 @@ final class NoteController extends Controller {
 		$author = $this->userManager->get($note->getUserId());
 		$data['authorName'] = $author?->getDisplayName() ?? $note->getUserId();
 		$data['canEdit'] = $note->getUserId() === $this->userId || $this->isAdmin();
-		$data['canApprove'] = !$note->getIsDraft()
+		$data['canApprove'] = !$note->getIsArchived()
+			&& !$note->getIsDraft()
 			&& !$note->getIsApproved()
 			&& $this->moderationService->canModerate($this->userId);
+		$data['canArchive'] = !$note->getIsArchived()
+			&& ($note->getEventEnd() === null || $note->getEventEnd() > time())
+			&& ($note->getUserId() === $this->userId
+				|| $this->moderationService->canModerate($this->userId));
 		$data['imageUrl'] = $note->getImageName() !== null
 			? $this->urlGenerator->linkToRoute(
 				'schwarzes_brett.image.show',

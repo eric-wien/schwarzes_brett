@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0 - 2026-08-07
+
+### Added
+
+- Let note creators archive their own notes manually. Moderators and
+  administrators can archive any note available to them, while the server
+  rejects archive requests from other users.
+
 ## 1.3.2 - 2026-07-31
 
 ### Fixed

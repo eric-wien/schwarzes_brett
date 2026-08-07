@@ -63,6 +63,8 @@ jq -e '
 	.note.title == "Integration test note"
 	and .note.categories == ["Test", "Automated"]
 	and .note.canEdit == true
+	and .note.canArchive == true
+	and .note.isArchived == false
 ' <<<"${created}" >/dev/null
 
 updated="$(
@@ -94,6 +96,36 @@ request \
 	--request PUT \
 	--data '{"title":"Updated integration note","eventEnd":1000000000}' \
 	"${API}/${note_id}"
+jq -e --argjson id "${note_id}" '.notes | any(.id == $id) | not' \
+	<<<"$(request --fail-with-body "${API}?limit=5")" >/dev/null
+jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' \
+	<<<"$(request --fail-with-body "${API}")" >/dev/null
+
+# Return the note to the board before testing the independent manual state.
+request \
+	--fail-with-body \
+	--output /dev/null \
+	--header 'Content-Type: application/json' \
+	--request PUT \
+	--data '{"title":"Updated integration note"}' \
+	"${API}/${note_id}"
+
+# Archiving is authorized server-side: another regular user cannot archive the
+# note, while its creator can. A manually archived note stays in the full list
+# but is removed from the Dashboard listing.
+if test -n "${SB_OTHER_USER:-}"; then
+	status="$(
+		request_as_other \
+			--output /dev/null \
+			--write-out '%{http_code}' \
+			--request POST \
+			"${API}/${note_id}/archive"
+	)"
+	test "${status}" = "403"
+fi
+
+archived="$(request --fail-with-body --request POST "${API}/${note_id}/archive")"
+jq -e '.note.isArchived == true and .note.canArchive == false' <<<"${archived}" >/dev/null
 jq -e --argjson id "${note_id}" '.notes | any(.id == $id) | not' \
 	<<<"$(request --fail-with-body "${API}?limit=5")" >/dev/null
 jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' \

@@ -47,13 +47,17 @@
 	/**
 	 * Which tab a note belongs to. The event dates form the period in which it is
 	 * on the board: it appears once the start date is reached and leaves again
-	 * after the end date. They decide visibility only - neither date affects
-	 * ordering or is displayed. A draft stays out of the board until published.
+	 * after the end date. A manual archive overrides that period and all workflow
+	 * states. Dates decide visibility only - neither affects ordering or is
+	 * displayed. A draft stays out of the board until published or archived.
 	 *
 	 * Validation guarantees end >= start, so the cases cannot overlap.
 	 */
 	function viewOf(note) {
 		const now = Date.now() / 1000
+		if (note.isArchived) {
+			return 'archive'
+		}
 		if (note.isDraft) {
 			return 'pending'
 		}
@@ -70,6 +74,9 @@
 	}
 
 	function badgeFor(note) {
+		if (note.isArchived) {
+			return translate('Archived')
+		}
 		if (note.isDraft) {
 			return translate('Draft')
 		}
@@ -149,6 +156,7 @@
 				viewDismiss: document.getElementById('board-view-dismiss'),
 				viewApprove: document.getElementById('board-view-approve'),
 				viewEdit: document.getElementById('board-view-edit'),
+				viewArchive: document.getElementById('board-view-archive'),
 				viewFigure: document.getElementById('board-view-figure'),
 				viewImage: document.getElementById('board-view-image'),
 				viewTags: document.getElementById('board-view-tags'),
@@ -185,6 +193,7 @@
 				removeImageWrap: document.getElementById('board-remove-image-wrap'),
 				removeImage: document.getElementById('board-remove-image'),
 				deleteNote: document.getElementById('board-delete-note'),
+				archiveNote: document.getElementById('board-archive-note'),
 				save: document.getElementById('board-save'),
 			}
 			this.imageHintDefault = this.elements.imageName.textContent
@@ -257,6 +266,7 @@
 			this.elements.saveDraft.addEventListener('click', (event) => this.saveNote(event, true))
 			this.bindCategorySuggestions()
 			this.elements.deleteNote.addEventListener('click', () => this.deleteActiveNote())
+			this.elements.archiveNote.addEventListener('click', () => this.archiveActiveNote('editor'))
 			this.elements.search.addEventListener('input', () => this.render())
 			this.elements.category.addEventListener('change', () => this.render())
 			this.elements.tabs.forEach((tab) => {
@@ -299,6 +309,7 @@
 					this.openEditor(note)
 				}
 			})
+			this.elements.viewArchive.addEventListener('click', () => this.archiveActiveNote('viewer'))
 			this.elements.viewer.addEventListener('click', (event) => {
 				if (event.target === this.elements.viewer) {
 					this.closeViewer()
@@ -399,7 +410,7 @@
 				this.elements.emptyText.textContent = translate('Try a different search term or category.')
 			} else if (this.view === 'archive') {
 				this.elements.emptyTitle.textContent = translate('The archive is empty')
-				this.elements.emptyText.textContent = translate('Notes outside their display period are kept here instead of being deleted.')
+				this.elements.emptyText.textContent = translate('Ended and manually archived notes are kept here instead of being deleted.')
 			} else if (this.view === 'pending') {
 				this.elements.emptyTitle.textContent = translate('Nothing waiting')
 				this.elements.emptyText.textContent = translate('Drafts, submissions awaiting approval, and scheduled notes appear here.')
@@ -716,6 +727,7 @@
 			})
 			this.elements.viewApprove.hidden = !note.canApprove
 			this.elements.viewEdit.hidden = !note.canEdit
+			this.elements.viewArchive.hidden = !note.canArchive
 
 			this.elements.viewer.showModal()
 			requestAnimationFrame(() => this.elements.viewDismiss.focus())
@@ -744,6 +756,7 @@
 			this.elements.save.textContent = this.saveLabel()
 			this.hideCategorySuggestions()
 			this.elements.deleteNote.hidden = !note
+			this.elements.archiveNote.hidden = !note?.canArchive
 			this.elements.removeImageWrap.hidden = !note?.imageUrl
 
 			if (note) {
@@ -853,6 +866,43 @@
 			}
 		}
 
+		async archiveActiveNote(source) {
+			const note = this.activeNote
+			const question = translate('Archive “{title}”?', {title: note?.title || ''})
+			if (!note || !window.confirm(question)) {
+				return
+			}
+
+			this.elements.viewArchive.disabled = true
+			if (source === 'editor') {
+				this.setSaving(true)
+				this.hideFormError()
+			}
+			try {
+				await this.request(`${this.apiUrl}/${note.id}/archive`, {method: 'POST'})
+				await this.refreshNotes(false)
+				if (source === 'editor') {
+					this.closeEditor()
+				} else {
+					this.closeViewer()
+				}
+				this.setView('archive')
+				this.showToast(translate('Note archived.'))
+			} catch (error) {
+				const message = error.message || translate('The note could not be archived.')
+				if (source === 'editor') {
+					this.showFormError(message)
+				} else {
+					this.showToast(message)
+				}
+			} finally {
+				this.elements.viewArchive.disabled = false
+				if (source === 'editor') {
+					this.setSaving(false)
+				}
+			}
+		}
+
 		async approveNote(note, closeViewer = false) {
 			try {
 				await this.request(`${this.apiUrl}/${note.id}/approve`, {method: 'POST'})
@@ -952,6 +1002,7 @@
 			this.elements.save.disabled = saving
 			this.elements.saveDraft.disabled = saving
 			this.elements.deleteNote.disabled = saving
+			this.elements.archiveNote.disabled = saving
 			this.elements.cancel.disabled = saving
 			this.elements.save.textContent = saving ? translate('Saving…') : this.saveLabel()
 		}

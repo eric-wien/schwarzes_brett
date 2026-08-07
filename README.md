@@ -30,7 +30,7 @@ they are empty, so a board without dated notes shows a single tab.
 | --- | --- |
 | Board | published notes inside their display period |
 | Drafts & scheduled | drafts, and notes whose start date still lies ahead |
-| Archive | notes whose end date has passed |
+| Archive | manually archived notes and notes whose end date has passed |
 
 A note saved with **Save as draft** stays out of the board, the archive and the
 Dashboard widget until it is published. The start and end dates form the display
@@ -45,7 +45,8 @@ period; both are optional and independent:
 
 Nothing is deleted when a note leaves the board. The dates are deliberately never
 shown on a note - they control visibility only - so the editor is where you see
-and change them. Cards outside the board carry a badge naming their state.
+and change them. A note can also be moved there immediately with **Archive
+note**. Cards outside the board carry a badge naming their state.
 
 Notes open in a read-only detail view, from the card title or the card body, so a
 clamped description can be read without opening the editor. A Dashboard widget
@@ -59,6 +60,10 @@ published note can only be changed or deleted by its author or a Nextcloud
 administrator. Administrators have full access to every note so they can
 moderate or remove content. Images are private app data and are only served
 through an authenticated app route.
+
+Authors can archive their own notes. Configured moderators and administrators
+can archive any note visible to them; this permission is enforced by the API as
+well as by the interface.
 
 An administrator can enable approval under **Administration settings →
 Additional settings → Schwarzes Brett** and choose moderating users. While the
@@ -133,8 +138,8 @@ php occ app:list
 ```
 
 Nextcloud 34 no longer ships the former `app:check-code` command. The
-`tests/integration.sh` script exercises create, validation, update, list, and
-delete behavior against a running instance:
+`tests/integration.sh` script exercises create, validation, update, list,
+archive, and delete behavior against a running instance:
 
 ```sh
 SB_BASE_URL=http://127.0.0.1:8080 \
@@ -158,7 +163,8 @@ SB_OTHER_PASSWORD=other-secret \
 
 `tests/moderation.sh` exercises the administrator, author, and configured
 moderator roles, including settings authorization, draft takedown, pending
-visibility, approval, reapproval after edits, and disabling the workflow:
+visibility, approval, manual archiving, reapproval after edits, and disabling
+the workflow:
 
 ```sh
 SB_BASE_URL=http://127.0.0.1:8080 \

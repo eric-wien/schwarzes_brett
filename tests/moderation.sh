@@ -118,6 +118,18 @@ author_request \
 test "$(
 	admin_request --output /dev/null --write-out '%{http_code}' "${APP}/notes/${draft_id}/image"
 )" = "200"
+
+# Administrators can archive drafts belonging to other users. Draft privacy is
+# unchanged: configured moderators still cannot discover or archive them.
+jq -e '.note.isArchived == true and .note.canArchive == false' \
+	<<<"$(admin_request --fail-with-body --request POST "${API}/${draft_id}/archive")" >/dev/null
+test "$(
+	moderator_request \
+		--output /dev/null \
+		--write-out '%{http_code}' \
+		--request POST \
+		"${API}/${draft_id}/archive"
+)" = "404"
 rm -f "${pixel_file}"
 pixel_file=''
 
@@ -168,6 +180,13 @@ approved="$(
 )"
 jq -e '.note.isApproved == true and .note.canApprove == false' <<<"${approved}" >/dev/null
 jq -e --argjson id "${pending_id}" '.notes | any(.id == $id)' \
+	<<<"$(author_request --fail-with-body "${API}?limit=100")" >/dev/null
+
+# Moderators can archive notes they did not create. The note remains available
+# in the full listing but disappears from the Dashboard listing.
+jq -e '.note.isArchived == true and .note.canArchive == false' \
+	<<<"$(moderator_request --fail-with-body --request POST "${API}/${pending_id}/archive")" >/dev/null
+jq -e --argjson id "${pending_id}" '.notes | any(.id == $id) | not' \
 	<<<"$(author_request --fail-with-body "${API}?limit=100")" >/dev/null
 
 # Editing approved content sends it through approval again.

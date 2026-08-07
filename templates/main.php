@@ -47,6 +47,9 @@ style('schwarzes_brett', 'main');
 		<symbol id="sb-i-delete" viewBox="0 0 24 24">
 			<path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14zM6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6z"/>
 		</symbol>
+		<symbol id="sb-i-archive" viewBox="0 0 24 24">
+			<path d="M20.54 5.23 19.15 3.55A1.5 1.5 0 0 0 18 3H6a1.5 1.5 0 0 0-1.15.55L3.46 5.23A1.98 1.98 0 0 0 3 6.5V19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.5c0-.46-.16-.9-.46-1.27M6.24 5h11.52l.83 1H5.41zM5 19V8h14v11zm4-9h6v2H9z"/>
+		</symbol>
 		<symbol id="sb-i-image" viewBox="0 0 24 24">
 			<path d="M8.5 13.5 11 16.5l3.5-4.5 4.5 6H5zM21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2"/>
 		</symbol>
@@ -171,6 +174,10 @@ style('schwarzes_brett', 'main');
 					<svg class="sb-button__icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#sb-i-pencil"/></svg>
 					<span><?php p($l->t('Edit note')); ?></span>
 				</button>
+				<button id="board-view-archive" class="sb-button sb-button--secondary" type="button" hidden>
+					<svg class="sb-button__icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#sb-i-archive"/></svg>
+					<span><?php p($l->t('Archive note')); ?></span>
+				</button>
 				<button id="board-view-dismiss" class="sb-button sb-button--primary" type="button">
 					<?php p($l->t('Close')); ?>
 				</button>
@@ -293,6 +300,10 @@ style('schwarzes_brett', 'main');
 				<button id="board-delete-note" class="sb-button sb-button--danger" type="button" hidden>
 					<svg class="sb-button__icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#sb-i-delete"/></svg>
 					<span><?php p($l->t('Delete')); ?></span>
+				</button>
+				<button id="board-archive-note" class="sb-button sb-button--secondary" type="button" hidden>
+					<svg class="sb-button__icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#sb-i-archive"/></svg>
+					<span><?php p($l->t('Archive note')); ?></span>
 				</button>
 				<span class="sb-dialog__spacer"></span>
 				<button id="board-cancel" class="sb-button sb-button--tertiary" type="button">

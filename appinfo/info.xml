@@ -16,7 +16,7 @@ Ein gemeinsames schwarzes Brett, auf dem alle Notizen mit Kategorien, Terminen,
 Orten, Bildern und Links veröffentlichen können. Die fünf neuesten Notizen sind
 außerdem als Widget für das Nextcloud-Dashboard verfügbar.
 	]]></description>
-	<version>1.3.2</version>
+	<version>1.4.0</version>
 	<licence>AGPL-3.0-or-later</licence>
 	<author>Schwarzes Brett contributors</author>
 	<namespace>SchwarzesBrett</namespace>
