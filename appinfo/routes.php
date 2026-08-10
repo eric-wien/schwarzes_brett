@@ -16,6 +16,7 @@ return [
 		['name' => 'note#destroy', 'url' => '/api/notes/{id}', 'verb' => 'DELETE'],
 		['name' => 'note#approve', 'url' => '/api/notes/{id}/approve', 'verb' => 'POST'],
 		['name' => 'note#archive', 'url' => '/api/notes/{id}/archive', 'verb' => 'POST'],
+		['name' => 'note#unarchive', 'url' => '/api/notes/{id}/unarchive', 'verb' => 'POST'],
 		['name' => 'image#upload', 'url' => '/api/notes/{id}/image', 'verb' => 'POST'],
 		['name' => 'image#destroy', 'url' => '/api/notes/{id}/image', 'verb' => 'DELETE'],
 		['name' => 'image#show', 'url' => '/notes/{id}/image', 'verb' => 'GET'],

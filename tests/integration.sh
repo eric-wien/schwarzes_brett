@@ -101,14 +101,17 @@ jq -e --argjson id "${note_id}" '.notes | any(.id == $id) | not' \
 jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' \
 	<<<"$(request --fail-with-body "${API}")" >/dev/null
 
-# Return the note to the board before testing the independent manual state.
-request \
-	--fail-with-body \
-	--output /dev/null \
-	--header 'Content-Type: application/json' \
-	--request PUT \
-	--data '{"title":"Updated integration note"}' \
-	"${API}/${note_id}"
+# Restoring an ended note removes the expired end bound and returns it to the
+# board and Dashboard listing.
+restored="$(request --fail-with-body --request POST "${API}/${note_id}/unarchive")"
+jq -e '
+	.note.eventEnd == null
+	and .note.isArchived == false
+	and .note.canArchive == true
+	and .note.canUnarchive == false
+' <<<"${restored}" >/dev/null
+jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' \
+	<<<"$(request --fail-with-body "${API}?limit=5")" >/dev/null
 
 # Archiving is authorized server-side: another regular user cannot archive the
 # note, while its creator can. A manually archived note stays in the full list
@@ -125,11 +128,46 @@ if test -n "${SB_OTHER_USER:-}"; then
 fi
 
 archived="$(request --fail-with-body --request POST "${API}/${note_id}/archive")"
-jq -e '.note.isArchived == true and .note.canArchive == false' <<<"${archived}" >/dev/null
+jq -e '
+	.note.isArchived == true
+	and .note.canArchive == false
+	and .note.canUnarchive == true
+' <<<"${archived}" >/dev/null
 jq -e --argjson id "${note_id}" '.notes | any(.id == $id) | not' \
 	<<<"$(request --fail-with-body "${API}?limit=5")" >/dev/null
 jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' \
 	<<<"$(request --fail-with-body "${API}")" >/dev/null
+
+if test -n "${SB_OTHER_USER:-}"; then
+	status="$(
+		request_as_other \
+			--output /dev/null \
+			--write-out '%{http_code}' \
+			--request POST \
+			"${API}/${note_id}/unarchive"
+	)"
+	test "${status}" = "403"
+fi
+
+restored="$(request --fail-with-body --request POST "${API}/${note_id}/unarchive")"
+jq -e '.note.isArchived == false and .note.canUnarchive == false' <<<"${restored}" >/dev/null
+jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' \
+	<<<"$(request --fail-with-body "${API}?limit=5")" >/dev/null
+
+# Editing a manually archived note also republishes it without requiring a
+# separate restore action.
+request --fail-with-body --output /dev/null --request POST "${API}/${note_id}/archive"
+republished="$(
+	request \
+		--fail-with-body \
+		--header 'Content-Type: application/json' \
+		--request PUT \
+		--data '{"title":"Republished integration note"}' \
+		"${API}/${note_id}"
+)"
+jq -e '.note.isArchived == false and .note.canUnarchive == false' <<<"${republished}" >/dev/null
+jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' \
+	<<<"$(request --fail-with-body "${API}?limit=5")" >/dev/null
 
 # A draft is likewise kept out of the widget listing until it is published.
 draft="$(

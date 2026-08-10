@@ -46,7 +46,9 @@ period; both are optional and independent:
 Nothing is deleted when a note leaves the board. The dates are deliberately never
 shown on a note - they control visibility only - so the editor is where you see
 and change them. A note can also be moved there immediately with **Archive
-note**. Cards outside the board carry a badge naming their state.
+note**. **Restore note** returns an archived note; for an ended note it also
+removes the expired end bound. Saving edits to an archived note restores it
+automatically. Cards outside the board carry a badge naming their state.
 
 Notes open in a read-only detail view, from the card title or the card body, so a
 clamped description can be read without opening the editor. A Dashboard widget
@@ -61,9 +63,9 @@ administrator. Administrators have full access to every note so they can
 moderate or remove content. Images are private app data and are only served
 through an authenticated app route.
 
-Authors can archive their own notes. Configured moderators and administrators
-can archive any note visible to them; this permission is enforced by the API as
-well as by the interface.
+Authors can archive and restore their own notes. Configured moderators and
+administrators can archive or restore any note visible to them; these
+permissions are enforced by the API as well as by the interface.
 
 An administrator can enable approval under **Administration settings →
 Additional settings → Schwarzes Brett** and choose moderating users. While the
@@ -139,7 +141,7 @@ php occ app:list
 
 Nextcloud 34 no longer ships the former `app:check-code` command. The
 `tests/integration.sh` script exercises create, validation, update, list,
-archive, and delete behavior against a running instance:
+archive, restore, and delete behavior against a running instance:
 
 ```sh
 SB_BASE_URL=http://127.0.0.1:8080 \

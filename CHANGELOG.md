@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0 - 2026-08-10
+
+### Added
+
+- Add restore controls for manually archived and ended notes. Restoring an
+  ended note removes its expired end bound so it can return to the board.
+
+### Changed
+
+- Saving edits to an archived note now republishes it outside the archive.
+
 ## 1.4.0 - 2026-08-07
 
 ### Added

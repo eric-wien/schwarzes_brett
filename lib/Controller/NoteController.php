@@ -67,6 +67,19 @@ final class NoteController extends Controller {
 		}
 	}
 
+	#[NoAdminRequired]
+	public function unarchive(int $id): JSONResponse {
+		try {
+			$note = $this->noteService->unarchive($id, $this->userId);
+
+			return new JSONResponse(['note' => $this->serialize($note)]);
+		} catch (NoteNotFoundException $exception) {
+			return $this->error($exception->getMessage(), 404);
+		} catch (PermissionException $exception) {
+			return $this->error($exception->getMessage(), 403);
+		}
+	}
+
 	/**
 	 * @param int|null $limit Return only the newest notes; omit for the full board.
 	 */
@@ -183,16 +196,17 @@ final class NoteController extends Controller {
 	private function serialize(Note $note): array {
 		$data = $note->jsonSerialize();
 		$author = $this->userManager->get($note->getUserId());
+		$isInArchive = $this->noteService->isInArchive($note);
+		$canChangeArchiveState = $note->getUserId() === $this->userId
+			|| $this->moderationService->canModerate($this->userId);
 		$data['authorName'] = $author?->getDisplayName() ?? $note->getUserId();
 		$data['canEdit'] = $note->getUserId() === $this->userId || $this->isAdmin();
-		$data['canApprove'] = !$note->getIsArchived()
+		$data['canApprove'] = !$isInArchive
 			&& !$note->getIsDraft()
 			&& !$note->getIsApproved()
 			&& $this->moderationService->canModerate($this->userId);
-		$data['canArchive'] = !$note->getIsArchived()
-			&& ($note->getEventEnd() === null || $note->getEventEnd() > time())
-			&& ($note->getUserId() === $this->userId
-				|| $this->moderationService->canModerate($this->userId));
+		$data['canArchive'] = !$isInArchive && $canChangeArchiveState;
+		$data['canUnarchive'] = $isInArchive && $canChangeArchiveState;
 		$data['imageUrl'] = $note->getImageName() !== null
 			? $this->urlGenerator->linkToRoute(
 				'schwarzes_brett.image.show',

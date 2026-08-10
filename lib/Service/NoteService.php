@@ -111,6 +111,7 @@ final class NoteService {
 	): Note {
 		$note = $this->find($id);
 		$this->assertCanManage($note, $userId, $isAdmin);
+		$wasArchived = $this->isInArchive($note);
 		$values = $this->validate(
 			$title,
 			$content,
@@ -125,6 +126,15 @@ final class NoteService {
 		);
 
 		$this->applyValues($note, $values);
+		if ($wasArchived) {
+			// Saving an archived note re-posts it. A manual archive flag must be
+			// cleared, and retaining an already-expired end bound would otherwise
+			// put the note straight back into the date-based archive.
+			$note->setIsArchived(false);
+			if ($note->getEventEnd() !== null && $note->getEventEnd() <= time()) {
+				$note->setEventEnd(null);
+			}
+		}
 		// Publishing new or changed content goes back through moderation. Drafts
 		// remain outside that workflow until their author submits them.
 		$note->setIsApproved($isDraft || !$this->moderationService->isEnabled());
@@ -141,6 +151,25 @@ final class NoteService {
 		$note = $this->find($id);
 		$this->assertCanManage($note, $userId, $isAdmin);
 		$this->mapper->delete($note);
+
+		return $note;
+	}
+
+	public function unarchive(int $id, string $userId): Note {
+		$note = $this->find($id);
+		$this->assertCanUnarchive($note, $userId);
+
+		if ($this->isInArchive($note)) {
+			$now = time();
+			$note->setIsArchived(false);
+			if ($note->getEventEnd() !== null && $note->getEventEnd() <= $now) {
+				$note->setEventEnd(null);
+			}
+			// Restoring is a new posting moment, just like editing or approval.
+			$note->setCreatedAt($now);
+			$note->setUpdatedAt($now);
+			$note = $this->mapper->update($note);
+		}
 
 		return $note;
 	}
@@ -243,6 +272,31 @@ final class NoteService {
 		throw new PermissionException(
 			$this->l10n->t('Only the author, a moderator, or an administrator can archive this note.'),
 		);
+	}
+
+	public function assertCanUnarchive(Note $note, string $userId): void {
+		$this->assertCanRead($note, $userId);
+		if ($note->getUserId() === $userId || $this->moderationService->canModerate($userId)) {
+			return;
+		}
+		throw new PermissionException(
+			$this->l10n->t('Only the author, a moderator, or an administrator can restore this note.'),
+		);
+	}
+
+	/**
+	 * Manual archives override workflow state. An end date only archives a note
+	 * after it has been published and approved, matching the client-side tabs.
+	 */
+	public function isInArchive(Note $note): bool {
+		if ($note->getIsArchived()) {
+			return true;
+		}
+
+		return !$note->getIsDraft()
+			&& $note->getIsApproved()
+			&& $note->getEventEnd() !== null
+			&& $note->getEventEnd() <= time();
 	}
 
 	/**

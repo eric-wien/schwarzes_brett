@@ -121,7 +121,7 @@ test "$(
 
 # Administrators can archive drafts belonging to other users. Draft privacy is
 # unchanged: configured moderators still cannot discover or archive them.
-jq -e '.note.isArchived == true and .note.canArchive == false' \
+jq -e '.note.isArchived == true and .note.canArchive == false and .note.canUnarchive == true' \
 	<<<"$(admin_request --fail-with-body --request POST "${API}/${draft_id}/archive")" >/dev/null
 test "$(
 	moderator_request \
@@ -130,6 +130,15 @@ test "$(
 		--request POST \
 		"${API}/${draft_id}/archive"
 )" = "404"
+test "$(
+	moderator_request \
+		--output /dev/null \
+		--write-out '%{http_code}' \
+		--request POST \
+		"${API}/${draft_id}/unarchive"
+)" = "404"
+jq -e '.note.isDraft == true and .note.isArchived == false' \
+	<<<"$(admin_request --fail-with-body --request POST "${API}/${draft_id}/unarchive")" >/dev/null
 rm -f "${pixel_file}"
 pixel_file=''
 
@@ -184,12 +193,24 @@ jq -e --argjson id "${pending_id}" '.notes | any(.id == $id)' \
 
 # Moderators can archive notes they did not create. The note remains available
 # in the full listing but disappears from the Dashboard listing.
-jq -e '.note.isArchived == true and .note.canArchive == false' \
+jq -e '.note.isArchived == true and .note.canArchive == false and .note.canUnarchive == true' \
 	<<<"$(moderator_request --fail-with-body --request POST "${API}/${pending_id}/archive")" >/dev/null
 jq -e --argjson id "${pending_id}" '.notes | any(.id == $id) | not' \
 	<<<"$(author_request --fail-with-body "${API}?limit=100")" >/dev/null
 
-# Editing approved content sends it through approval again.
+# The same moderator can restore the note without gaining edit access.
+jq -e '.note.isArchived == false and .note.canEdit == false and .note.canUnarchive == false' \
+	<<<"$(moderator_request --fail-with-body --request POST "${API}/${pending_id}/unarchive")" >/dev/null
+jq -e --argjson id "${pending_id}" '.notes | any(.id == $id)' \
+	<<<"$(author_request --fail-with-body "${API}?limit=100")" >/dev/null
+
+# Editing archived approved content restores it and sends it through approval
+# again.
+moderator_request \
+	--fail-with-body \
+	--output /dev/null \
+	--request POST \
+	"${API}/${pending_id}/archive"
 revised="$(
 	author_request \
 		--fail-with-body \
@@ -198,7 +219,7 @@ revised="$(
 		--data '{"title":"Moderation test submission, revised"}' \
 		"${API}/${pending_id}"
 )"
-jq -e '.note.isApproved == false' <<<"${revised}" >/dev/null
+jq -e '.note.isApproved == false and .note.isArchived == false' <<<"${revised}" >/dev/null
 
 # Turning the workflow off publishes anything still waiting and restores direct
 # publishing for subsequent notes.

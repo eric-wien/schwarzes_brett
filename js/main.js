@@ -157,6 +157,7 @@
 				viewApprove: document.getElementById('board-view-approve'),
 				viewEdit: document.getElementById('board-view-edit'),
 				viewArchive: document.getElementById('board-view-archive'),
+				viewUnarchive: document.getElementById('board-view-unarchive'),
 				viewFigure: document.getElementById('board-view-figure'),
 				viewImage: document.getElementById('board-view-image'),
 				viewTags: document.getElementById('board-view-tags'),
@@ -194,6 +195,7 @@
 				removeImage: document.getElementById('board-remove-image'),
 				deleteNote: document.getElementById('board-delete-note'),
 				archiveNote: document.getElementById('board-archive-note'),
+				unarchiveNote: document.getElementById('board-unarchive-note'),
 				save: document.getElementById('board-save'),
 			}
 			this.imageHintDefault = this.elements.imageName.textContent
@@ -267,6 +269,7 @@
 			this.bindCategorySuggestions()
 			this.elements.deleteNote.addEventListener('click', () => this.deleteActiveNote())
 			this.elements.archiveNote.addEventListener('click', () => this.archiveActiveNote('editor'))
+			this.elements.unarchiveNote.addEventListener('click', () => this.unarchiveActiveNote('editor'))
 			this.elements.search.addEventListener('input', () => this.render())
 			this.elements.category.addEventListener('change', () => this.render())
 			this.elements.tabs.forEach((tab) => {
@@ -310,6 +313,7 @@
 				}
 			})
 			this.elements.viewArchive.addEventListener('click', () => this.archiveActiveNote('viewer'))
+			this.elements.viewUnarchive.addEventListener('click', () => this.unarchiveActiveNote('viewer'))
 			this.elements.viewer.addEventListener('click', (event) => {
 				if (event.target === this.elements.viewer) {
 					this.closeViewer()
@@ -728,6 +732,7 @@
 			this.elements.viewApprove.hidden = !note.canApprove
 			this.elements.viewEdit.hidden = !note.canEdit
 			this.elements.viewArchive.hidden = !note.canArchive
+			this.elements.viewUnarchive.hidden = !note.canUnarchive
 
 			this.elements.viewer.showModal()
 			requestAnimationFrame(() => this.elements.viewDismiss.focus())
@@ -757,6 +762,7 @@
 			this.hideCategorySuggestions()
 			this.elements.deleteNote.hidden = !note
 			this.elements.archiveNote.hidden = !note?.canArchive
+			this.elements.unarchiveNote.hidden = !note?.canUnarchive
 			this.elements.removeImageWrap.hidden = !note?.imageUrl
 
 			if (note) {
@@ -903,6 +909,43 @@
 			}
 		}
 
+		async unarchiveActiveNote(source) {
+			const note = this.activeNote
+			if (!note) {
+				return
+			}
+
+			this.elements.viewUnarchive.disabled = true
+			if (source === 'editor') {
+				this.setSaving(true)
+				this.hideFormError()
+			}
+			try {
+				await this.request(`${this.apiUrl}/${note.id}/unarchive`, {method: 'POST'})
+				await this.refreshNotes(false)
+				const restored = this.notes.find((item) => item.id === note.id)
+				if (source === 'editor') {
+					this.closeEditor()
+				} else {
+					this.closeViewer()
+				}
+				this.setView(restored ? viewOf(restored) : 'board')
+				this.showToast(translate('Note restored.'))
+			} catch (error) {
+				const message = error.message || translate('The note could not be restored.')
+				if (source === 'editor') {
+					this.showFormError(message)
+				} else {
+					this.showToast(message)
+				}
+			} finally {
+				this.elements.viewUnarchive.disabled = false
+				if (source === 'editor') {
+					this.setSaving(false)
+				}
+			}
+		}
+
 		async approveNote(note, closeViewer = false) {
 			try {
 				await this.request(`${this.apiUrl}/${note.id}/approve`, {method: 'POST'})
@@ -1003,6 +1046,7 @@
 			this.elements.saveDraft.disabled = saving
 			this.elements.deleteNote.disabled = saving
 			this.elements.archiveNote.disabled = saving
+			this.elements.unarchiveNote.disabled = saving
 			this.elements.cancel.disabled = saving
 			this.elements.save.textContent = saving ? translate('Saving…') : this.saveLabel()
 		}
