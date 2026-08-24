@@ -862,10 +862,22 @@ body[data-theme-dark-highcontrast] .sb {
 	fill: currentColor;
 }
 
-.sb-card__author span {
+.sb-card__author .sb-author-name {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.sb-author-name:is(a) {
+	color: inherit;
+	text-decoration: none;
+}
+
+.sb-author-name:is(a):hover,
+.sb-author-name:is(a):focus-visible {
+	color: var(--color-main-text);
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
 .sb-card__date {

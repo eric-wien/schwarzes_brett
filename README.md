@@ -15,7 +15,9 @@ which keeps the date it shows in step with its position.
 
 The app also registers a Nextcloud Dashboard widget. It shows the five newest
 notes with up to three lines of their description plus their link, and links to
-the complete board.
+the complete board. When Nextcloud Talk is available to the current user,
+author names on the board, in note details, and in the widget link to Talk. A
+link for another author opens a direct conversation with them.
 
 The interface follows Nextcloud's design tokens, so the default, light, dark, and
 both high-contrast themes are covered, and it is responsive from narrow phones up

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0 - 2026-08-24
+
+### Added
+
+- Link note author names to Nextcloud Talk when it is available to the current
+  user, opening a direct conversation for other authors.
+
+### Fixed
+
+- Keep macOS metadata out of locally built App Store archives.
+
 ## 1.5.0 - 2026-08-10
 
 ### Added

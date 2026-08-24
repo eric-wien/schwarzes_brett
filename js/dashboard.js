@@ -164,8 +164,13 @@
 			body.append(link)
 		}
 
-		body.append(element('span', 'sbw-item__meta',
-			`${note.authorName} · ${relativeDate(lastChange(note))}`))
+		const meta = element('span', 'sbw-item__meta')
+		const author = element(note.authorTalkUrl ? 'a' : 'span', 'sbw-item__author', note.authorName)
+		if (note.authorTalkUrl) {
+			author.href = note.authorTalkUrl
+		}
+		meta.append(author, document.createTextNode(` · ${relativeDate(lastChange(note))}`))
+		body.append(meta)
 
 		item.append(body)
 		return item
@@ -192,8 +197,8 @@
 			notes.slice(0, ITEM_LIMIT).forEach((note) => {
 				list.append(createItem(note, `${boardUrl}#note-${note.id}`))
 			})
-			// The whole row is clickable for convenience, but a click on the
-			// note's own link has to reach that link instead.
+			// The whole row is clickable for convenience, but clicks on the
+			// note's own link or an author's Talk link have to reach that link.
 			list.addEventListener('click', (event) => {
 				if (event.target.closest('a')) {
 					return

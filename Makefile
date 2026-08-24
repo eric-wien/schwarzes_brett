@@ -16,7 +16,7 @@ appstore: verify-release
 	mkdir -p "$(stage_dir)" "$(artifact_dir)"
 	cp -R $(production_dirs) "$(stage_dir)/"
 	cp $(production_files) "$(stage_dir)/"
-	tar -C "$(build_dir)/staging" -czf "$(archive)" "$(app_name)"
+	COPYFILE_DISABLE=1 tar -C "$(build_dir)/staging" -czf "$(archive)" "$(app_name)"
 	@echo "Created $(archive)"
 
 archive-path:

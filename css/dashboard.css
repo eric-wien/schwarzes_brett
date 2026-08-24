@@ -239,6 +239,17 @@ body[data-theme-dark-highcontrast] .sbw {
 	white-space: nowrap;
 }
 
+.sbw-item__author {
+	color: inherit;
+}
+
+.sbw-item__author:is(a):hover,
+.sbw-item__author:is(a):focus-visible {
+	color: var(--color-main-text);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
 .sbw-more {
 	align-self: flex-start;
 	flex: 0 0 auto;

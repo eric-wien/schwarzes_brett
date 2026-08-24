@@ -661,7 +661,7 @@
 
 			const foot = this.createElement('footer', 'sb-card__foot')
 			const author = this.createElement('span', 'sb-card__author')
-			author.append(icon('sb-i-account'), this.createElement('span', '', note.authorName))
+			author.append(icon('sb-i-account'), this.createAuthorName(note))
 			const date = this.createElement('time', 'sb-card__date', this.formatRelativeDate(note.createdAt))
 			date.dateTime = new Date(note.createdAt * 1000).toISOString()
 			foot.append(author, date)
@@ -698,6 +698,35 @@
 			return row
 		}
 
+		createAuthorName(note) {
+			const author = this.createElement(note.authorTalkUrl ? 'a' : 'span', 'sb-author-name', note.authorName)
+			if (note.authorTalkUrl) {
+				author.href = note.authorTalkUrl
+			}
+			return author
+		}
+
+		renderViewerAuthor(note) {
+			const marker = '\u0000author\u0000'
+			const text = translate('Posted by {author} · {date}', {
+				author: marker,
+				date: this.formatRelativeDate(lastChange(note)),
+			})
+			const markerIndex = text.indexOf(marker)
+			if (markerIndex === -1) {
+				this.elements.viewAuthor.textContent = translate('Posted by {author} · {date}', {
+					author: note.authorName,
+					date: this.formatRelativeDate(lastChange(note)),
+				})
+				return
+			}
+			this.elements.viewAuthor.replaceChildren(
+				document.createTextNode(text.slice(0, markerIndex)),
+				this.createAuthorName(note),
+				document.createTextNode(text.slice(markerIndex + marker.length)),
+			)
+		}
+
 		openViewer(note) {
 			this.activeNote = note
 			this.elements.viewTitle.textContent = note.title
@@ -725,10 +754,7 @@
 			// Same rows as the card, so the two views stay recognisably related.
 			this.elements.viewMeta.replaceChildren(...this.createMeta(note).children)
 
-			this.elements.viewAuthor.textContent = translate('Posted by {author} · {date}', {
-				author: note.authorName,
-				date: this.formatRelativeDate(lastChange(note)),
-			})
+			this.renderViewerAuthor(note)
 			this.elements.viewApprove.hidden = !note.canApprove
 			this.elements.viewEdit.hidden = !note.canEdit
 			this.elements.viewArchive.hidden = !note.canArchive

@@ -16,6 +16,7 @@ use OCA\SchwarzesBrett\Service\NoteNotFoundException;
 use OCA\SchwarzesBrett\Service\NoteService;
 use OCA\SchwarzesBrett\Service\PermissionException;
 use OCA\SchwarzesBrett\Service\ValidationException;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
@@ -25,6 +26,8 @@ use OCP\IURLGenerator;
 use OCP\IUserManager;
 
 final class NoteController extends Controller {
+	private ?bool $talkEnabled = null;
+
 	public function __construct(
 		string $appName,
 		IRequest $request,
@@ -33,6 +36,7 @@ final class NoteController extends Controller {
 		private readonly IGroupManager $groupManager,
 		private readonly IUserManager $userManager,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly IAppManager $appManager,
 		private readonly ModerationService $moderationService,
 		private readonly string $userId,
 	) {
@@ -200,6 +204,13 @@ final class NoteController extends Controller {
 		$canChangeArchiveState = $note->getUserId() === $this->userId
 			|| $this->moderationService->canModerate($this->userId);
 		$data['authorName'] = $author?->getDisplayName() ?? $note->getUserId();
+		$data['authorTalkUrl'] = null;
+		if ($author !== null && $this->isTalkEnabled()) {
+			$data['authorTalkUrl'] = $this->urlGenerator->linkToRoute('spreed.Page.index');
+			if ($note->getUserId() !== $this->userId) {
+				$data['authorTalkUrl'] .= '?callUser=' . rawurlencode($note->getUserId());
+			}
+		}
 		$data['canEdit'] = $note->getUserId() === $this->userId || $this->isAdmin();
 		$data['canApprove'] = !$isInArchive
 			&& !$note->getIsDraft()
@@ -219,6 +230,10 @@ final class NoteController extends Controller {
 
 	private function isAdmin(): bool {
 		return $this->groupManager->isAdmin($this->userId);
+	}
+
+	private function isTalkEnabled(): bool {
+		return $this->talkEnabled ??= (bool)$this->appManager->isEnabledForUser('spreed');
 	}
 
 	private function error(string $message, int $status, string $field = ''): JSONResponse {

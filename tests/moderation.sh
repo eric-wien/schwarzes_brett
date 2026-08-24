@@ -38,7 +38,7 @@ moderator_request() {
 }
 
 original_settings="$(admin_request --fail-with-body "${SETTINGS_API}")"
-original_enabled="$(jq -er '.enabled' <<<"${original_settings}")"
+original_enabled="$(jq -er 'if (.enabled | type) == "boolean" then (.enabled | tostring) else error("invalid enabled value") end' <<<"${original_settings}")"
 original_moderators="$(jq -cer '.moderators' <<<"${original_settings}")"
 draft_id=''
 pending_id=''
