@@ -60,8 +60,9 @@ item links to `#note-<id>`, which the app resolves by opening that note directly
 
 ## Permissions
 
-Every authenticated user can read published notes and create notes. Drafts,
-including their images, are private to their author and administrators. A
+Every authenticated user can read published notes and create notes. Drafts and
+notes scheduled for future publication, including their images, are private to
+their author and administrators. This also excludes non-author moderators. A
 published note can only be changed or deleted by its author or a Nextcloud
 administrator. Administrators have full access to every note so they can
 moderate or remove content. Images are private app data and are only served
@@ -75,8 +76,9 @@ An administrator can enable approval under **Administration settings →
 Additional settings → Schwarzes Brett** and choose moderating users. While the
 workflow is enabled, new and edited notes stay out of the board and Dashboard
 until a moderator or administrator approves them. Pending submissions are
-visible only to their author, configured moderators, and administrators.
-Disabling approval publishes anything still waiting.
+visible only to their author, configured moderators, and administrators;
+future-scheduled submissions stay private until their publication time is reached.
+Disabling approval approves waiting submissions without bypassing their schedule.
 
 ## Requirements
 
@@ -185,6 +187,11 @@ SB_MODERATOR_USER=moderator \
 SB_MODERATOR_PASSWORD=moderator-secret \
 ./tests/moderation.sh
 ```
+
+With the same three account variables, run `bash tests/scheduled-privacy.sh` to
+check scheduling privacy for ordinary users and moderators, including images,
+mutations, approved/archived notes, and visibility after publication time.
+These scripts temporarily change moderation settings; use a test instance.
 
 For a production release, package the directory without development-only files
 such as `.git`, and keep the built `js/` and `css/` assets in the archive.

@@ -46,10 +46,10 @@ final class NoteMapper extends QBMapper {
 	}
 
 	/**
-	 * Administrators see every note. Moderators see submitted notes and their
-	 * own drafts. Everyone else sees approved notes plus their own drafts and
-	 * submissions. Filtering in SQL keeps private content out of controller
-	 * memory altogether.
+	 * Administrators see every note. Drafts and future-scheduled notes are
+	 * otherwise private to their author. Moderators also see submissions once
+	 * their publication time is reached; everyone else sees approved notes.
+	 * Filtering in SQL keeps private content out of controller memory.
 	 *
 	 * @return list<Note>
 	 */
@@ -96,6 +96,21 @@ final class NoteMapper extends QBMapper {
 				),
 			);
 		}
+		// Scheduling privacy applies even to approved or manually archived notes
+		// and to moderators. Authors retain access to their own scheduled notes.
+		$query->andWhere(
+			$query->expr()->orX(
+				$query->expr()->eq(
+					'user_id',
+					$query->createNamedParameter($userId, IQueryBuilder::PARAM_STR),
+				),
+				$query->expr()->isNull('publish_at'),
+				$query->expr()->lte(
+					'publish_at',
+					$query->createNamedParameter(time(), IQueryBuilder::PARAM_INT),
+				),
+			),
+		);
 		$this->orderByLastChange($query);
 
 		return $this->findEntities($query);

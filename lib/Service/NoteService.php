@@ -245,8 +245,9 @@ final class NoteService {
 	}
 
 	/**
-	 * Administrators can read everything. Drafts are otherwise private to their
-	 * author, while submissions awaiting approval are also visible to moderators.
+	 * Administrators can read everything. Drafts and future-scheduled notes are
+	 * otherwise private to their author. Moderators may read submissions only
+	 * once their publication time is reached. Keep this in sync with findAll().
 	 * Answering "not found" keeps private content undiscoverable.
 	 */
 	public function assertCanRead(Note $note, string $userId): void {
@@ -254,6 +255,7 @@ final class NoteService {
 			return;
 		}
 		if (!$note->getIsDraft()
+			&& ($note->getPublishAt() === null || $note->getPublishAt() <= time())
 			&& ($note->getIsApproved() || $this->moderationService->isModerator($userId))) {
 			return;
 		}
@@ -271,8 +273,8 @@ final class NoteService {
 	}
 
 	public function assertCanArchive(Note $note, string $userId): void {
-		// Preserve draft privacy: even a moderator must not be able to discover an
-		// author's private draft merely by guessing its id.
+		// Preserve draft and scheduling privacy, including against moderators
+		// guessing a private note's id.
 		$this->assertCanRead($note, $userId);
 		if ($note->getUserId() === $userId || $this->moderationService->canModerate($userId)) {
 			return;

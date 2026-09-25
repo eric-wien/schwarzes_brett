@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.1 - 2026-09-25
+
+### Fixed
+
+- Restrict future-scheduled notes and their images to the author and
+  administrators, including when approved or manually archived. Enforce this
+  in API listings and direct access, also for non-author moderators.
+
 ## 1.7.0 - 2026-09-25
 
 ### Added
