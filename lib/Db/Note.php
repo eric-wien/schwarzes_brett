@@ -25,6 +25,10 @@ use OCP\AppFramework\Db\Entity;
  * @method void setEventStart(?int $eventStart)
  * @method int|null getEventEnd()
  * @method void setEventEnd(?int $eventEnd)
+ * @method int|null getPublishAt()
+ * @method void setPublishAt(?int $publishAt)
+ * @method int|null getArchiveAt()
+ * @method void setArchiveAt(?int $archiveAt)
  * @method bool getIsAllDay()
  * @method void setIsAllDay(bool $isAllDay)
  * @method bool getIsDraft()
@@ -55,6 +59,8 @@ final class Note extends Entity implements JsonSerializable {
 	protected ?string $categories = null;
 	protected ?int $eventStart = null;
 	protected ?int $eventEnd = null;
+	protected ?int $publishAt = null;
+	protected ?int $archiveAt = null;
 	protected bool $isAllDay = false;
 	protected bool $isDraft = false;
 	protected bool $isApproved = true;
@@ -71,6 +77,8 @@ final class Note extends Entity implements JsonSerializable {
 		$this->addType('id', 'integer');
 		$this->addType('eventStart', 'integer');
 		$this->addType('eventEnd', 'integer');
+		$this->addType('publishAt', 'integer');
+		$this->addType('archiveAt', 'integer');
 		$this->addType('isAllDay', 'boolean');
 		$this->addType('isDraft', 'boolean');
 		$this->addType('isApproved', 'boolean');
@@ -96,6 +104,8 @@ final class Note extends Entity implements JsonSerializable {
 			'categories' => is_array($decodedCategories) ? $decodedCategories : [],
 			'eventStart' => $this->eventStart,
 			'eventEnd' => $this->eventEnd,
+			'publishAt' => $this->publishAt,
+			'archiveAt' => $this->archiveAt,
 			'isAllDay' => $this->isAllDay,
 			'isDraft' => $this->isDraft,
 			'isApproved' => $this->isApproved,

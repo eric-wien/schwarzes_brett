@@ -5,7 +5,8 @@ post notes for everyone on the server, including:
 
 - a required title and an optional description;
 - multiple categories;
-- a display period (see below), an all-day flag, and a location;
+- event dates, an all-day flag, and a location;
+- a separate board display period (see below);
 - an external HTTP(S) link and label;
 - one JPEG, PNG, GIF, or WebP image up to 5 MB.
 
@@ -35,8 +36,9 @@ they are empty, so a board without dated notes shows a single tab.
 | Archive | manually archived notes and notes whose end date has passed |
 
 A note saved with **Save as draft** stays out of the board, the archive and the
-Dashboard widget until it is published. The start and end dates form the display
-period; both are optional and independent:
+Dashboard widget until it is published. Under **Show on board**, **Publish from**
+and **Archive at** control the display period; both are optional and independent.
+**Event dates & location** describe the event and never affect visibility:
 
 | start | end | where the note is |
 | --- | --- | --- |
@@ -45,10 +47,10 @@ period; both are optional and independent:
 | in the future | any | drafts & scheduled, until the start date is reached |
 | any | in the past | archive |
 
-Nothing is deleted when a note leaves the board. The dates are deliberately never
-shown on a note - they control visibility only - so the editor is where you see
-and change them. A note can also be moved there immediately with **Archive
-note**. **Restore note** returns an archived note; for an ended note it also
+Nothing is deleted when a note leaves the board. Event dates appear on cards and
+in note details; scheduling dates stay in the editor. Existing display periods
+are migrated to the scheduling fields on upgrade. A note can also be moved to
+the archive immediately with **Archive note**. **Restore note** returns an archived note; for an ended note it also
 removes the expired end bound. Saving edits to an archived note restores it
 automatically. Cards outside the board carry a badge naming their state.
 
@@ -133,6 +135,9 @@ mobile and desktop clients while `js/dashboard.js` renders the web view.
 Translations live in `l10n/<locale>.json` (server) and `l10n/<locale>.js`
 (browser); both files must list the same keys. Plural keys use Nextcloud's
 `_singular_::_plural_` form.
+
+Run the dependency-free frontend scheduling tests with
+`node --test tests/scheduling.cjs`.
 
 Useful checks inside a Nextcloud installation:
 

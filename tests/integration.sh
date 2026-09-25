@@ -50,6 +50,10 @@ created="$(
 			"title": "Integration test note",
 			"content": "Created by tests/integration.sh",
 			"categories": ["Test", "Automated"],
+			"eventStart": 4102444800,
+			"eventEnd": 4102531200,
+			"publishAt": 1000000000,
+			"archiveAt": 4102444800,
 			"location": "CI",
 			"linkUrl": "https://nextcloud.com/",
 			"linkLabel": "Nextcloud"
@@ -65,6 +69,10 @@ jq -e '
 	and .note.canEdit == true
 	and .note.canArchive == true
 	and .note.isArchived == false
+	and .note.eventStart == 4102444800
+	and .note.eventEnd == 4102531200
+	and .note.publishAt == 1000000000
+	and .note.archiveAt == 4102444800
 ' <<<"${created}" >/dev/null
 
 updated="$(
@@ -87,14 +95,49 @@ jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' <<<"${listed}" >/dev/
 # Notes are ordered by their last change, so the note just updated comes first.
 jq -e --argjson id "${note_id}" '.notes[0].id == $id' <<<"${listed}" >/dev/null
 
-# An end date in the past takes a note off the board and into the archive, which
-# the limited listing used by the Dashboard widget must not return.
+# Both date pairs validate independently, on create and update.
+for payload in \
+	'{"eventStart":200,"eventEnd":100}' \
+	'{"publishAt":200,"archiveAt":100}' \
+	'{"eventStart":-1}' '{"eventEnd":-1}' \
+	'{"publishAt":-1}' '{"archiveAt":-1}'; do
+	payload="$(jq '. + {title: "Invalid dates"}' <<<"${payload}")"
+	for method in POST PUT; do
+		url="${API}"
+		if test "${method}" = PUT; then url="${API}/${note_id}"; fi
+		test "$(request --output /dev/null --write-out '%{http_code}' \
+			--header 'Content-Type: application/json' --request "${method}" \
+			--data "${payload}" "${url}")" = 422
+	done
+done
+
+# Neither future nor past event dates affect board/Dashboard visibility.
+for dates in '{"eventStart":4102444800,"eventEnd":4102531200}' \
+	'{"eventEnd":1000000000}'; do
+	request --fail-with-body --output /dev/null \
+		--header 'Content-Type: application/json' --request PUT \
+		--data "$(jq '. + {title: "Event information only"}' <<<"${dates}")" \
+		"${API}/${note_id}"
+	jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' \
+		<<<"$(request --fail-with-body "${API}?limit=5")" >/dev/null
+done
+
+# A future publication date excludes a note, independently of its event dates.
+request --fail-with-body --output /dev/null \
+	--header 'Content-Type: application/json' --request PUT \
+	--data '{"title":"Scheduled note","publishAt":4102444800,"eventEnd":1000000000}' \
+	"${API}/${note_id}"
+jq -e --argjson id "${note_id}" '.notes | any(.id == $id) | not' \
+	<<<"$(request --fail-with-body "${API}?limit=5")" >/dev/null
+
+# An archive date in the past takes a note off the board and into the archive,
+# which the limited listing used by the Dashboard widget must not return.
 request \
 	--fail-with-body \
 	--output /dev/null \
 	--header 'Content-Type: application/json' \
 	--request PUT \
-	--data '{"title":"Updated integration note","eventEnd":1000000000}' \
+	--data '{"title":"Updated integration note","eventEnd":1000000000,"archiveAt":1000000000}' \
 	"${API}/${note_id}"
 jq -e --argjson id "${note_id}" '.notes | any(.id == $id) | not' \
 	<<<"$(request --fail-with-body "${API}?limit=5")" >/dev/null
@@ -105,7 +148,8 @@ jq -e --argjson id "${note_id}" '.notes | any(.id == $id)' \
 # board and Dashboard listing.
 restored="$(request --fail-with-body --request POST "${API}/${note_id}/unarchive")"
 jq -e '
-	.note.eventEnd == null
+	.note.archiveAt == null
+	and .note.eventEnd == 1000000000
 	and .note.isArchived == false
 	and .note.canArchive == true
 	and .note.canUnarchive == false

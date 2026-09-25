@@ -66,6 +66,8 @@ final class NoteService {
 		string $linkUrl = '',
 		string $linkLabel = '',
 		bool $isDraft = false,
+		?int $publishAt = null,
+		?int $archiveAt = null,
 	): Note {
 		$values = $this->validate(
 			$title,
@@ -78,6 +80,8 @@ final class NoteService {
 			$linkUrl,
 			$linkLabel,
 			$isDraft,
+			$publishAt,
+			$archiveAt,
 		);
 
 		$now = time();
@@ -108,6 +112,8 @@ final class NoteService {
 		string $linkUrl = '',
 		string $linkLabel = '',
 		bool $isDraft = false,
+		?int $publishAt = null,
+		?int $archiveAt = null,
 	): Note {
 		$note = $this->find($id);
 		$this->assertCanManage($note, $userId, $isAdmin);
@@ -123,6 +129,8 @@ final class NoteService {
 			$linkUrl,
 			$linkLabel,
 			$isDraft,
+			$publishAt,
+			$archiveAt,
 		);
 
 		$this->applyValues($note, $values);
@@ -131,8 +139,8 @@ final class NoteService {
 			// cleared, and retaining an already-expired end bound would otherwise
 			// put the note straight back into the date-based archive.
 			$note->setIsArchived(false);
-			if ($note->getEventEnd() !== null && $note->getEventEnd() <= time()) {
-				$note->setEventEnd(null);
+			if ($note->getArchiveAt() !== null && $note->getArchiveAt() <= time()) {
+				$note->setArchiveAt(null);
 			}
 		}
 		// Publishing new or changed content goes back through moderation. Drafts
@@ -162,8 +170,8 @@ final class NoteService {
 		if ($this->isInArchive($note)) {
 			$now = time();
 			$note->setIsArchived(false);
-			if ($note->getEventEnd() !== null && $note->getEventEnd() <= $now) {
-				$note->setEventEnd(null);
+			if ($note->getArchiveAt() !== null && $note->getArchiveAt() <= $now) {
+				$note->setArchiveAt(null);
 			}
 			// Restoring is a new posting moment, just like editing or approval.
 			$note->setCreatedAt($now);
@@ -285,7 +293,7 @@ final class NoteService {
 	}
 
 	/**
-	 * Manual archives override workflow state. An end date only archives a note
+	 * Manual archives override workflow state. A scheduling end only archives a note
 	 * after it has been published and approved, matching the client-side tabs.
 	 */
 	public function isInArchive(Note $note): bool {
@@ -295,8 +303,8 @@ final class NoteService {
 
 		return !$note->getIsDraft()
 			&& $note->getIsApproved()
-			&& $note->getEventEnd() !== null
-			&& $note->getEventEnd() <= time();
+			&& $note->getArchiveAt() !== null
+			&& $note->getArchiveAt() <= time();
 	}
 
 	/**
@@ -314,6 +322,8 @@ final class NoteService {
 		string $linkUrl,
 		string $linkLabel,
 		bool $isDraft,
+		?int $publishAt,
+		?int $archiveAt,
 	): array {
 		$title = trim($title);
 		$content = trim($content);
@@ -339,10 +349,21 @@ final class NoteService {
 		if ($eventStart !== null && $eventStart < 0) {
 			throw new ValidationException($this->l10n->t('The start date is invalid.'), 'eventStart');
 		}
-		// Both dates are independently optional: they bound the period in which
-		// the note is on the board, so "hide after this date" is valid on its own.
+		if ($eventEnd !== null && $eventEnd < 0) {
+			throw new ValidationException($this->l10n->t('The end date is invalid.'), 'eventEnd');
+		}
 		if ($eventStart !== null && $eventEnd !== null && $eventEnd < $eventStart) {
 			throw new ValidationException($this->l10n->t('The end date must be after the start date.'), 'eventEnd');
+		}
+
+		if ($publishAt !== null && $publishAt < 0) {
+			throw new ValidationException($this->l10n->t('The publication date is invalid.'), 'publishAt');
+		}
+		if ($archiveAt !== null && $archiveAt < 0) {
+			throw new ValidationException($this->l10n->t('The archive date is invalid.'), 'archiveAt');
+		}
+		if ($publishAt !== null && $archiveAt !== null && $archiveAt < $publishAt) {
+			throw new ValidationException($this->l10n->t('The archive date must be after the publication date.'), 'archiveAt');
 		}
 
 		$cleanCategories = [];
@@ -375,6 +396,8 @@ final class NoteService {
 			'categories' => $cleanCategories,
 			'eventStart' => $eventStart,
 			'eventEnd' => $eventEnd,
+			'publishAt' => $publishAt,
+			'archiveAt' => $archiveAt,
 			'isAllDay' => $isAllDay,
 			'location' => $location,
 			'linkUrl' => $linkUrl,
@@ -393,6 +416,8 @@ final class NoteService {
 		$note->setCategories($encodedCategories !== '[]' ? $encodedCategories : null);
 		$note->setEventStart($values['eventStart']);
 		$note->setEventEnd($values['eventEnd']);
+		$note->setPublishAt($values['publishAt']);
+		$note->setArchiveAt($values['archiveAt']);
 		$note->setIsAllDay($values['isAllDay']);
 		$note->setLocation($values['location'] !== '' ? $values['location'] : null);
 		$note->setLinkUrl($values['linkUrl'] !== '' ? $values['linkUrl'] : null);

@@ -130,22 +130,21 @@ final class NoteMapper extends QBMapper {
 					$query->createNamedParameter(false, IQueryBuilder::PARAM_BOOL),
 				),
 			)
-			// A note is on the board between its start and end date; both are
-			// optional, and either one outside the window archives the note.
+			// Only scheduling dates control board visibility, not event dates.
 			->andWhere(
 				$query->expr()->orX(
-					$query->expr()->isNull('event_start'),
+					$query->expr()->isNull('publish_at'),
 					$query->expr()->lte(
-						'event_start',
+						'publish_at',
 						$query->createNamedParameter($now, IQueryBuilder::PARAM_INT),
 					),
 				),
 			)
 			->andWhere(
 				$query->expr()->orX(
-					$query->expr()->isNull('event_end'),
+					$query->expr()->isNull('archive_at'),
 					$query->expr()->gt(
-						'event_end',
+						'archive_at',
 						$query->createNamedParameter($now, IQueryBuilder::PARAM_INT),
 					),
 				),

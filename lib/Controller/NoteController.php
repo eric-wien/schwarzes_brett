@@ -114,6 +114,8 @@ final class NoteController extends Controller {
 		string $linkUrl = '',
 		string $linkLabel = '',
 		bool $isDraft = false,
+		?int $publishAt = null,
+		?int $archiveAt = null,
 	): JSONResponse {
 		try {
 			$note = $this->noteService->create(
@@ -128,6 +130,8 @@ final class NoteController extends Controller {
 				$linkUrl,
 				$linkLabel,
 				$isDraft,
+				$publishAt,
+				$archiveAt,
 			);
 
 			return new JSONResponse(['note' => $this->serialize($note)], 201);
@@ -152,6 +156,8 @@ final class NoteController extends Controller {
 		string $linkUrl = '',
 		string $linkLabel = '',
 		bool $isDraft = false,
+		?int $publishAt = null,
+		?int $archiveAt = null,
 	): JSONResponse {
 		try {
 			$note = $this->noteService->update(
@@ -168,6 +174,8 @@ final class NoteController extends Controller {
 				$linkUrl,
 				$linkLabel,
 				$isDraft,
+				$publishAt,
+				$archiveAt,
 			);
 
 			return new JSONResponse(['note' => $this->serialize($note)]);

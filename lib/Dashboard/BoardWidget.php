@@ -118,8 +118,7 @@ final class BoardWidget implements IAPIWidget, IButtonWidget, IIconWidget {
 
 	private function toWidgetItem(Note $note): WidgetItem {
 		$author = $this->userManager->get($note->getUserId())?->getDisplayName() ?? $note->getUserId();
-		// The event dates only decide whether a note is on the board or in the
-		// archive; they are deliberately not part of what a note displays.
+		// Keep the widget compact; full event details are available on the board.
 		$subtitleParts = [$author];
 		if ($note->getLocation() !== null && $note->getLocation() !== '') {
 			$subtitleParts[] = $note->getLocation();

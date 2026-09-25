@@ -117,6 +117,16 @@ OC.L10N.register(
     "Use a JPEG, PNG, GIF, or WebP image." : "Verwende ein JPEG-, PNG-, GIF- oder WebP-Bild.",
     "Web address" : "Webadresse",
     "What would you like to share?" : "Was möchtest du teilen?",
-    "When and where" : "Wann und wo"
+    "Event dates & location" : "Termin & Ort",
+    "Show on board" : "Anzeige auf dem Brett",
+    "Publish from" : "Veröffentlichen ab",
+    "Archive at" : "Archivieren am",
+    "Leave blank: publish immediately, no automatic archive." : "Leer lassen: sofort veröffentlichen, nicht automatisch archivieren.",
+    "Starts: {date}" : "Beginn: {date}",
+    "Ends: {date}" : "Ende: {date}",
+    "The end date is invalid." : "Das Enddatum ist ungültig.",
+    "The publication date is invalid." : "Das Veröffentlichungsdatum ist ungültig.",
+    "The archive date is invalid." : "Das Archivierungsdatum ist ungültig.",
+    "The archive date must be after the publication date." : "Das Archivierungsdatum muss nach dem Veröffentlichungsdatum liegen."
 },
 "nplurals=2; plural=(n != 1);");

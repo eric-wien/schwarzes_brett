@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.0 - 2026-09-25
+
+### Added
+
+- Separate event dates from note scheduling with clearly labelled date pairs.
+  Event dates appear on notes; publication and archive dates control visibility.
+  Existing display periods are preserved in the scheduling fields.
+
 ## 1.6.0 - 2026-08-24
 
 ### Added

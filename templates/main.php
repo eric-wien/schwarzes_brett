@@ -237,7 +237,7 @@ style('schwarzes_brett', 'main');
 					<fieldset class="sb-group sb-input--full">
 						<legend>
 							<svg aria-hidden="true" viewBox="0 0 24 24"><use href="#sb-i-clock"/></svg>
-							<?php p($l->t('When and where')); ?>
+							<?php p($l->t('Event dates & location')); ?>
 						</legend>
 						<div class="sb-form">
 							<div class="sb-input">
@@ -258,6 +258,26 @@ style('schwarzes_brett', 'main');
 								<label for="board-location"><?php p($l->t('Location')); ?></label>
 								<input id="board-location" name="location" type="text" maxlength="255"
 									   placeholder="<?php p($l->t('Room, address, or online')); ?>">
+							</div>
+						</div>
+					</fieldset>
+
+					<fieldset class="sb-group sb-input--full">
+						<legend>
+							<svg aria-hidden="true" viewBox="0 0 24 24"><use href="#sb-i-board"/></svg>
+							<?php p($l->t('Show on board')); ?>
+						</legend>
+						<div class="sb-form">
+							<div class="sb-input">
+								<label for="board-publish-at"><?php p($l->t('Publish from')); ?></label>
+								<input id="board-publish-at" name="publishAt" type="datetime-local" aria-describedby="board-schedule-hint">
+							</div>
+							<div class="sb-input">
+								<label for="board-archive-at"><?php p($l->t('Archive at')); ?></label>
+								<input id="board-archive-at" name="archiveAt" type="datetime-local" aria-describedby="board-schedule-hint">
+							</div>
+							<div class="sb-input sb-input--full">
+								<small id="board-schedule-hint"><?php p($l->t('Leave blank: publish immediately, no automatic archive.')); ?></small>
 							</div>
 						</div>
 					</fieldset>

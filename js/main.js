@@ -45,11 +45,9 @@
 	}
 
 	/**
-	 * Which tab a note belongs to. The event dates form the period in which it is
-	 * on the board: it appears once the start date is reached and leaves again
-	 * after the end date. A manual archive overrides that period and all workflow
-	 * states. Dates decide visibility only - neither affects ordering or is
-	 * displayed. A draft stays out of the board until published or archived.
+	 * Scheduling dates control the tab; event dates are information only.
+	 * Manual archives override the schedule and workflow states.
+	 * A draft stays out of the board until published or archived.
 	 *
 	 * Validation guarantees end >= start, so the cases cannot overlap.
 	 */
@@ -64,10 +62,10 @@
 		if (!note.isApproved) {
 			return 'pending'
 		}
-		if (note.eventEnd && note.eventEnd <= now) {
+		if (note.archiveAt != null && note.archiveAt <= now) {
 			return 'archive'
 		}
-		if (note.eventStart && note.eventStart > now) {
+		if (note.publishAt != null && note.publishAt > now) {
 			return 'pending'
 		}
 		return 'board'
@@ -185,6 +183,8 @@
 				categories: document.getElementById('board-categories'),
 				eventStart: document.getElementById('board-event-start'),
 				eventEnd: document.getElementById('board-event-end'),
+				publishAt: document.getElementById('board-publish-at'),
+				archiveAt: document.getElementById('board-archive-at'),
 				allDay: document.getElementById('board-all-day'),
 				location: document.getElementById('board-location'),
 				linkUrl: document.getElementById('board-link-url'),
@@ -445,7 +445,7 @@
 				return matchesCategory && (query === '' || haystack.includes(query))
 			})
 
-			// Newest change first; the event dates never influence the order.
+			// Newest change first; neither date pair influences the order.
 			return notes.sort((left, right) => lastChange(right) - lastChange(left) || right.id - left.id)
 		}
 
@@ -671,12 +671,24 @@
 			return card
 		}
 
-		/**
-		 * The event dates are intentionally absent: they only decide whether a
-		 * note sits on the board or in the archive.
-		 */
+		/** Event dates are public information; scheduling dates stay in the editor. */
 		createMeta(note) {
 			const meta = this.createElement('div', 'sb-card__meta')
+			if (note.eventStart != null || note.eventEnd != null) {
+				const format = (timestamp) => new Intl.DateTimeFormat(undefined, {
+					dateStyle: 'medium',
+					...(note.isAllDay ? {} : {timeStyle: 'short'}),
+				}).format(new Date(timestamp * 1000))
+				let dates
+				if (note.eventStart != null && note.eventEnd != null) {
+					dates = `${format(note.eventStart)} – ${format(note.eventEnd)}`
+				} else if (note.eventStart != null) {
+					dates = translate('Starts: {date}', {date: format(note.eventStart)})
+				} else {
+					dates = translate('Ends: {date}', {date: format(note.eventEnd)})
+				}
+				meta.append(this.createMetaRow('sb-i-clock', dates))
+			}
 			if (note.location) {
 				meta.append(this.createMetaRow('sb-i-marker', note.location))
 			}
@@ -797,6 +809,8 @@
 				this.elements.categories.value = note.categories.join(', ')
 				this.elements.eventStart.value = this.toDateTimeInput(note.eventStart)
 				this.elements.eventEnd.value = this.toDateTimeInput(note.eventEnd)
+				this.elements.publishAt.value = this.toDateTimeInput(note.publishAt)
+				this.elements.archiveAt.value = this.toDateTimeInput(note.archiveAt)
 				this.elements.allDay.checked = note.isAllDay
 				this.elements.location.value = note.location
 				this.elements.linkUrl.value = note.linkUrl
@@ -996,6 +1010,8 @@
 					.filter(Boolean),
 				eventStart: this.fromDateTimeInput(this.elements.eventStart.value),
 				eventEnd: this.fromDateTimeInput(this.elements.eventEnd.value),
+				publishAt: this.fromDateTimeInput(this.elements.publishAt.value),
+				archiveAt: this.fromDateTimeInput(this.elements.archiveAt.value),
 				isAllDay: this.elements.allDay.checked,
 				location: this.elements.location.value,
 				linkUrl: this.elements.linkUrl.value,
@@ -1052,6 +1068,8 @@
 				categories: this.elements.categories,
 				eventStart: this.elements.eventStart,
 				eventEnd: this.elements.eventEnd,
+				publishAt: this.elements.publishAt,
+				archiveAt: this.elements.archiveAt,
 				location: this.elements.location,
 				linkUrl: this.elements.linkUrl,
 				linkLabel: this.elements.linkLabel,
@@ -1107,7 +1125,7 @@
 		}
 
 		toDateTimeInput(timestamp) {
-			if (!timestamp) {
+			if (timestamp == null) {
 				return ''
 			}
 			const date = new Date(timestamp * 1000)
